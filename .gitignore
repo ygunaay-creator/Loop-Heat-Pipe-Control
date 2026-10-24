@@ -1,0 +1,28 @@
+# LabVIEW
+*.aliases
+*.lvlps
+.cache/
+builds/
+
+# MATLAB / Simulink
+*.asv
+*.autosave
+*.slxc
+slprj/
+*_ert_rtw/
+*_grt_rtw/
+*.mexw64
+codegen/
+
+# Origin
+*.opju.bak
+*_backup*
+
+# Ham veriler
+data/raw/
+*.tdms_index
+
+# İşletim sistemi
+.DS_Store
+Thumbs.db
+desktop.ini
