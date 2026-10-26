@@ -2,7 +2,7 @@
 
 Bu repo, **Loop Heat Pipe (LHP) teknolojisine dayalı buz önleme uygulamaları için test altyapısı** projesinin **kontrol ve veri toplama** kısmını içerir.
 
-> Durum: **Planlama / erken geliştirme.** Donanım (veri toplama cihazının marka/modeli, sensör tipleri) henüz kesinleşmedi. `docs/` altındaki belgeler taslaktır ve bilgiler netleştikçe güncellenecektir.
+> Durum: **Planlama / erken geliştirme.** Ekipmanlar belirlendi. Sensör konumları, ısıtıcı ve Stewart Platformu ayrıntıları netleşmedi. `docs/` altındaki belgeler taslaktır.
 
 ## Proje Hakkında
 
@@ -16,35 +16,52 @@ LHP, çalışma akışkanının buharlaşma–yoğuşma döngüsüyle ısıyı m
 
 | Alan | Açıklama | Araç |
 |---|---|---|
-| Veri toplama | ~12 sıcaklık + 2 dijital basınç sensörünün sürekli, eş zamanlı okunması ve kaydı | LabVIEW |
-| Kontrol | Isıtıcı ve fanların sensör verilerine göre kontrolü, güvenlik limitleri | LabVIEW |
+| Veri toplama | 20 termokupl + 2 basınç transmitterinin sürekli, eş zamanlı okunması ve kaydı | LabVIEW + Keysight DAQ973A |
+| Kontrol | Isıtıcı, fanlar ve soğutucunun sensör verilerine göre kontrolü, güvenlik limitleri | LabVIEW + güç kaynakları + Huber CC-415 |
 | Platform entegrasyonu | Simulink ile çalışan Stewart Platformu'nun LabVIEW'dan komut alması ve durum bilgisinin kaydı | LabVIEW ↔ Simulink (UDP) |
 | Analiz | Kaydedilen verilerin işlenmesi ve grafiklenmesi | Origin |
+
+## Ekipman
+
+| Ekipman | Model | Rolü |
+|---|---|---|
+| Veri toplama | Keysight DAQ973A + DAQM901A | 20 termokupl + 2 akım (basınç) kanalı |
+| Güç kaynağı | GW Instek GPP-3323 | Isıtıcı beslemesi ve güç ölçümü |
+| Güç kaynağı | Keysight EDU36311A | Fanlar ve basınç sensörü beslemesi (24 V) |
+| Soğutucu | Huber CC-415 | Test yüzeyi soğutması (−40…200 °C) |
+| Basınç sensörü | DMS20S (×2) | Mutlak basınç, 4–20 mA |
+| Bilgisayar | Dell Precision T3680 | LabVIEW, Simulink, Origin |
+
+Ayrıntılar: [docs/ekipman.md](docs/ekipman.md)
 
 ## Sistem Mimarisi (özet)
 
 ```mermaid
 flowchart LR
     subgraph LHP["LHP Düzeneği"]
-        EV["Evaporatör tarafı<br/>sıcaklık sensörleri<br/>basınç sensörü"]
-        CO["Kondenser tarafı<br/>sıcaklık sensörleri<br/>basınç sensörü"]
+        TC["20 × termokupl"]
+        PT["2 × basınç<br/>4–20 mA"]
         H["Isıtıcı"]
         F["Fanlar"]
+        S["Test yüzeyi"]
     end
-    DAQ["Veri toplama cihazı<br/>(20 giriş kanalı)"]
+    DAQ["DAQ973A<br/>+ DAQM901A"]
+    GPP["GPP-3323"]
+    EDU["EDU36311A"]
+    CH["Huber CC-415"]
     LV["LabVIEW<br/>izleme · kontrol · kayıt"]
-    SL["Simulink<br/>platform kontrolü"]
+    SL["Simulink"]
     SP["Stewart Platformu"]
     OR["Origin<br/>analiz"]
 
-    EV --> DAQ
-    CO --> DAQ
-    DAQ --> LV
-    LV -->|güç / hız komutu| H
-    LV -->|güç / hız komutu| F
-    LV <-->|UDP: komut / durum| SL
-    SL --> SP
-    LV -->|CSV / TDMS| OR
+    TC --> DAQ
+    PT --> DAQ
+    DAQ <-->|USB| LV
+    LV <-->|USB| GPP --> H
+    LV <-->|USB| EDU --> F
+    LV <-->|USB/RS-232| CH --> S
+    LV <-->|UDP| SL --> SP
+    LV -->|CSV| OR
 ```
 
 Detaylar: [docs/sistem-mimarisi.md](docs/sistem-mimarisi.md)
@@ -63,6 +80,8 @@ Detaylar: [docs/sistem-mimarisi.md](docs/sistem-mimarisi.md)
 
 ## Belgeler
 
+- [Proje görevleri (iş adımları)](docs/gorevler.md)
+- [Ekipman](docs/ekipman.md)
 - [Sistem mimarisi](docs/sistem-mimarisi.md)
 - [Sensör ve kanal planı](docs/kanal-plani.md)
 - [LabVIEW–Simulink haberleşmesi](docs/labview-simulink-haberlesme.md)

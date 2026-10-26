@@ -1,51 +1,67 @@
 # Sensör ve Kanal Planı
 
-> Taslak – sensör sayısı, tipi ve konumları kesinleştiğinde güncellenecek. Kanal atamaları şimdilik önerilir.
+> Taslak – sensör konumları ve sayıları hocayla kesinleştirilecek. Ekipman ayrıntıları: [ekipman.md](ekipman.md)
 
-Veri toplama cihazında **20 giriş kanalı** bulunmaktadır. Beklenen sensör sayısı 14 olduğundan 6 kanal yedektir.
+DAQM901A kartı **slot 100**'e takılıdır:
+- **101–120:** 20 adet termokupl kanalı
+- **121–122:** 2 adet akım kanalı. Basınç transmitterleri (4–20 mA) bu kanallara bağlanır, böylece 20 kanalın tamamı sıcaklığa kalır.
 
-## Giriş kanalları
+## Giriş kanalları (öneri)
 
-| Kanal | Etiket | Büyüklük | Konum | Sensör tipi | Not |
-|---|---|---|---|---|---|
-| 1 | T_EV_01 | Sıcaklık | Evaporatör | Belirsiz (termokupl?) | |
-| 2 | T_EV_02 | Sıcaklık | Evaporatör | | |
-| 3 | T_EV_03 | Sıcaklık | Evaporatör | | |
-| 4 | T_EV_04 | Sıcaklık | Evaporatör | | |
-| 5 | T_EV_05 | Sıcaklık | Evaporatör | | |
-| 6 | T_EV_06 | Sıcaklık | Evaporatör | | |
-| 7 | T_CO_01 | Sıcaklık | Kondenser | | |
-| 8 | T_CO_02 | Sıcaklık | Kondenser | | |
-| 9 | T_CO_03 | Sıcaklık | Kondenser | | |
-| 10 | T_CO_04 | Sıcaklık | Kondenser | | |
-| 11 | T_CO_05 | Sıcaklık | Kondenser | | |
-| 12 | T_CO_06 | Sıcaklık | Kondenser | | |
-| 13 | P_EV | Basınç | Evaporatör | Dijital | Bağlantı tipi belirsiz |
-| 14 | P_CO | Basınç | Kondenser | Dijital | Bağlantı tipi belirsiz |
-| 15–20 | – | Yedek | – | – | Ortam sıcaklığı, test yüzeyi, ısıtıcı akım/gerilimi için kullanılabilir |
+Termokupl tipi önerisi: **T tipi** (−100…400 °C aralığında DAQ hatası 0,9 °C; 0 °C civarında iyi davranır). Kesinleşmedi.
 
-> Basınç sensörleri RS-485/Modbus veya seri port üzerinden haberleşiyorsa analog kanal kullanmazlar; bu durumda 13–14 numaralı kanallar da yedeğe geçer.
+| Kanal | Etiket | Büyüklük | Konum |
+|---|---|---|---|
+| 101 | T_EV_01 | Sıcaklık | Evaporatör gövdesi – ısıtıcı tarafı |
+| 102 | T_EV_02 | Sıcaklık | Evaporatör gövdesi |
+| 103 | T_EV_03 | Sıcaklık | Evaporatör gövdesi |
+| 104 | T_CC | Sıcaklık | Kompansasyon odası (compensation chamber) |
+| 105 | T_VL_IN | Sıcaklık | Buhar hattı girişi (evaporatör çıkışı) |
+| 106 | T_VL_OUT | Sıcaklık | Buhar hattı çıkışı (kondenser girişi) |
+| 107 | T_LL_IN | Sıcaklık | Sıvı hattı girişi (kondenser çıkışı) |
+| 108 | T_LL_OUT | Sıcaklık | Sıvı hattı çıkışı (evaporatör girişi) |
+| 109 | T_CO_01 | Sıcaklık | Kondenser |
+| 110 | T_CO_02 | Sıcaklık | Kondenser |
+| 111 | T_CO_03 | Sıcaklık | Kondenser |
+| 112 | T_SURF_01 | Sıcaklık | Test yüzeyi (hücum kenarı) |
+| 113 | T_SURF_02 | Sıcaklık | Test yüzeyi |
+| 114 | T_SURF_03 | Sıcaklık | Test yüzeyi |
+| 115 | T_SURF_04 | Sıcaklık | Test yüzeyi |
+| 116 | T_SURF_05 | Sıcaklık | Test yüzeyi |
+| 117 | T_CH_SUP | Sıcaklık | Soğutucu sıvı gidiş hattı |
+| 118 | T_CH_RET | Sıcaklık | Soğutucu sıvı dönüş hattı |
+| 119 | T_HTR | Sıcaklık | Isıtıcı yüzeyi (güvenlik limiti için) |
+| 120 | T_AMB | Sıcaklık | Ortam |
+| 121 | P_EV | Basınç (4–20 mA) | Evaporatör / buhar hattı – mutlak |
+| 122 | P_CO | Basınç (4–20 mA) | Kondenser / sıvı hattı – mutlak |
 
-## Önerilen ek ölçümler (yedek kanallar için)
+Soğutucu sıvı gidiş/dönüş sıcaklıkları ve debisi bilinirse kondenserden çekilen ısı hesaplanabilir: Q_c = ṁ·c_p·ΔT. Bu değer enerji dengesi kontrolü için kullanılır.
 
-- **T_AMB** – ortam sıcaklığı
-- **T_SURF_xx** – soğuk test yüzeyi sıcaklıkları
-- **Isıtıcı gücü** – akım ve gerilim ölçümü. Termal direnç hesabı için uygulanan ısı yükünün bilinmesi gerekir.
+## Cihazlardan okunan diğer büyüklükler
+
+| Etiket | Kaynak | Açıklama |
+|---|---|---|
+| HTR_V, HTR_I, HTR_P | GPP-3323 CH1 (geri okuma) | Isıtıcı gerilimi, akımı, gücü (Q) |
+| FAN_V, FAN_I | EDU36311A CH2 | Fan gerilimi ve akımı |
+| LOOP_V | EDU36311A CH3 | Basınç sensörü besleme gerilimi (24 V) |
+| CH_T_INT, CH_T_PROC, CH_SET | Huber CC-415 | Banyo sıcaklığı, proses sıcaklığı, hedef sıcaklık |
+| SP_* | Simulink (UDP) | Stewart Platformu konum ve açıları |
 
 ## Çıkışlar (kontrol)
 
-| Çıkış | Aktüatör | Kontrol şekli | Not |
-|---|---|---|---|
-| OUT_HEATER | Isıtıcı | Açma-kapama / PWM / analog | Cihazda çıkış olup olmadığı belirsiz |
-| OUT_FAN_xx | Fan(lar) | PWM / analog / röle | Fan sayısı belirsiz |
-| – | Stewart Platformu | UDP üzerinden Simulink'e | Bkz. labview-simulink-haberlesme.md |
+| Aktüatör | Cihaz | Kontrol |
+|---|---|---|
+| Isıtıcı | GPP-3323 CH1 (gerekirse CH1+CH2 seri/paralel) | Gerilim ayarı. Sabit güç veya sıcaklık hedefli (PID). |
+| Fanlar | EDU36311A CH2 | Gerilim ayarıyla hız kontrolü |
+| Basınç sensörü beslemesi | EDU36311A CH3 | Sabit 24 V |
+| Test yüzeyi soğutması | Huber CC-415 | Hedef sıcaklık |
+| Stewart Platformu | Simulink (UDP) | Hareket profili |
 
 ## Etiketleme kuralı
 
 `<büyüklük>_<bölge>_<sıra>`
 
 - Büyüklük: `T` sıcaklık, `P` basınç
-- Bölge: `EV` evaporatör, `CO` kondenser, `SURF` test yüzeyi, `AMB` ortam
-- Sıra: iki haneli numara
+- Bölge: `EV` evaporatör, `CC` kompansasyon odası, `VL` buhar hattı, `LL` sıvı hattı, `CO` kondenser, `SURF` test yüzeyi, `CH` soğutucu, `HTR` ısıtıcı, `AMB` ortam
 
-Aynı etiketler LabVIEW kanal isimlerinde, kayıt dosyası sütun başlıklarında ve Origin'de kullanılmalıdır.
+Aynı etiketler LabVIEW kanal isimlerinde, kayıt dosyası sütunlarında ve Origin'de kullanılır.

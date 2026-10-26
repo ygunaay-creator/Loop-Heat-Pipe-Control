@@ -1,54 +1,92 @@
 # Sistem Mimarisi
 
-> Taslak – donanım bilgileri netleştikçe güncellenecek.
+> Taslak – ekipman ayrıntıları: [ekipman.md](ekipman.md), kanallar: [kanal-plani.md](kanal-plani.md)
 
 ## 1. Fiziksel sistem
 
-LHP düzeneği iki ana bölümden oluşur:
+- **Evaporatör tarafı:** GPP-3323 ile beslenen elektrikli ısıtıcı evaporatörü ısıtır. Bu ısı, uçaktaki atık ısıyı temsil eder. Çalışma akışkanı burada buharlaşır.
+- **Buhar ve sıvı hatları:** Buhar kondensere, yoğuşan sıvı kılcal kuvvetle evaporatöre geri döner.
+- **Kondenser tarafı:** Kondenser, kanat hücum kenarını temsil eden soğuk test yüzeyine termal olarak bağlıdır. Test yüzeyi Huber CC-415 soğutucusuyla düşük sıcaklığa getirilir. Fanlar soğutma koşullarını değiştirmek için kullanılır.
 
-- **Evaporatör tarafı:** Elektrikli ısıtıcıdan alınan ısıyla çalışma akışkanı buharlaşır. Bu ısı, uçakta oluşan atık ısıyı temsil eder.
-- **Kondenser tarafı:** Buhar yoğuşur ve ısıyı soğuk test yüzeyine aktarır. Fanlar soğutma koşullarını ayarlamak için kullanılır.
+Düzenek İTÜ'de kurulacak, dinamik testler için Türk-Alman Üniversitesi'ndeki Stewart Platformu'na taşınacaktır.
 
-Her iki tarafta da sıcaklık sensörleri (toplam ~12) ve birer dijital basınç sensörü (toplam 2) bulunması beklenmektedir.
+## 2. Bağlantı şeması
 
-Düzenek İTÜ'de kurulacak, dinamik testler için Türk-Alman Üniversitesi'ndeki Stewart Platformu üzerine taşınacaktır.
+```mermaid
+flowchart LR
+    subgraph PC["Dell T3680 – LabVIEW"]
+        LV["LabVIEW uygulaması"]
+    end
 
-## 2. Katmanlar
+    DAQ["Keysight DAQ973A<br/>+ DAQM901A"]
+    GPP["GW Instek GPP-3323<br/>ısıtıcı beslemesi"]
+    EDU["Keysight EDU36311A<br/>fan + 24 V sensör"]
+    CH["Huber CC-415<br/>soğutucu"]
+    SL["Simulink"]
+    SP["Stewart Platformu"]
 
-| Katman | Bileşen | Görev |
-|---|---|---|
-| Sensör | Sıcaklık sensörleri, basınç sensörleri | Fiziksel büyüklükleri ölçmek |
-| Donanım | Veri toplama cihazı (20 giriş kanallı kart) | Sinyalleri dijitale çevirmek; varsa çıkış kanallarıyla aktüatörleri sürmek |
-| Aktüatör | Isıtıcı, fanlar, Stewart Platformu | Isı girdisini, soğutmayı ve hareketi sağlamak |
-| Yazılım | LabVIEW | İzleme, kontrol, güvenlik, kayıt, platform komutları |
-| Yazılım | Simulink | Stewart Platformu'nun düşük seviyeli kontrolü |
-| Analiz | Origin | Grafikler, termal direnç vb. hesaplar |
+    subgraph LHP["LHP düzeneği"]
+        TC["20 × termokupl"]
+        PT["2 × basınç transmitteri<br/>4–20 mA"]
+        H["Isıtıcı"]
+        F["Fanlar"]
+        S["Test yüzeyi /<br/>soğuk plaka"]
+    end
+
+    TC --> DAQ
+    PT -->|kanal 121–122| DAQ
+    EDU -->|24 V döngü| PT
+    GPP --> H
+    EDU --> F
+    CH -->|soğutucu sıvı| S
+
+    DAQ <-->|USB · SCPI| LV
+    GPP <-->|USB · SCPI| LV
+    EDU <-->|USB · SCPI| LV
+    CH <-->|USB/RS-232| LV
+    SL <-->|Ethernet · UDP| LV
+    SL --> SP
+```
 
 ## 3. LabVIEW uygulamasının modülleri
 
-1. **Okuma (Acquisition):** Tüm sıcaklık kanallarını eş zamanlı okur; basınç sensörlerini bağlantı tipine göre okur (analog giriş ya da RS-485/Modbus/seri).
-2. **İzleme (UI):** Canlı grafikler, anlık değerler, durum göstergeleri.
-3. **Kontrol:**
-   - Isıtıcı: sabit güç modu ve sıcaklık hedefli (açma-kapama / PID) mod.
-   - Fanlar: kondenser sıcaklığına göre hız ayarı.
-4. **Güvenlik:** Sıcaklık ve basınç limitleri aşıldığında ısıtıcıyı keser, alarm verir ve olayı kaydeder.
-5. **Platform arayüzü:** Simulink'e UDP üzerinden hareket komutları gönderir, gerçek konum ve durum bilgisini alır.
-6. **Kayıt:** Sensör verileri, aktüatör komutları ve platform durumu tek zaman ekseninde, zaman damgalı olarak kaydedilir.
+Her cihaz için ayrı bir sürücü katmanı yazılır. Üst katman cihazlardan bağımsız çalışır.
 
-Önerilen yapı: üretici–tüketici (producer–consumer) döngüleri. Okuma, kontrol, platform haberleşmesi ve kayıt ayrı döngülerde çalışır, böylece birindeki gecikme diğerlerini etkilemez.
+| Modül | Görev |
+|---|---|
+| `instruments/daq973a` | Kanal yapılandırma (TC tipi, akım kanalları, Mx+B), tarama başlatma, veri okuma |
+| `instruments/gpp3323` | Gerilim/akım ayarı, çıkış aç/kapa, V/I geri okuma, OVP/OCP |
+| `instruments/edu36311a` | Fan gerilimi, 24 V döngü beslemesi, geri okuma |
+| `instruments/huber` | Hedef sıcaklık, banyo/proses sıcaklığı okuma, başlat/durdur |
+| `platform` | Simulink ile UDP haberleşmesi |
+| `control` | Isıtıcı (sabit güç / PID), fan kontrolü, soğutucu hedefi |
+| `safety` | Limitler, alarmlar, acil kapatma |
+| `logging` | Tüm verilerin tek zaman ekseninde CSV/TDMS kaydı |
+| `ui` | Canlı grafikler, göstergeler, deney ayarları |
 
-## 4. Stewart Platformu entegrasyonu
+Önerilen yapı **üretici–tüketici (producer–consumer)** döngüleridir: ölçüm, kontrol, platform haberleşmesi ve kayıt ayrı döngülerde çalışır, kuyruklarla veri alışverişi yapar.
 
-- Simulink platformun kendi kontrolünü yapmaya devam eder.
-- LabVIEW ana kontrol merkezidir: hareket profili (ör. sabit eğim, sinüs), başlat/durdur komutları gönderir.
-- Haberleşme koptuğunda platformun güvenli konuma dönmesi **Simulink tarafında** sağlanmalıdır. Acil durdurma LabVIEW'a bağımlı olmamalıdır.
+**Zamanlama (öneri):**
+- DAQ taraması: 1 s (20 TC + 2 akım ≈ 0,5 s sürer)
+- Güç kaynağı geri okuma: 1 s
+- Soğutucu: 1–2 s
+- Platform haberleşmesi: 50–100 ms (ayrı döngü)
+
+## 4. Güvenlik
+
+Katmanlı koruma:
+
+1. **Donanım:** GPP-3323 ve EDU36311A'da OVP/OCP sınırları ayarlanır. Huber'in kendi aşırı sıcaklık koruması vardır.
+2. **DAQ:** Kritik kanallara (ör. T_HTR) alarm limiti tanımlanır. Alarm çıkışı PC'den bağımsız çalışır.
+3. **LabVIEW:**
+   - T_HTR veya T_EV limit üstü → ısıtıcı çıkışı kapatılır
+   - Basınç limit üstü → ısıtıcı kapatılır
+   - Kopuk termokupl → uyarı. Kritik kanaldaysa ısıtıcı kapatılır.
+   - Bir cihazla haberleşme koparsa → ısıtıcı kapatılır
+4. **Platform:** Haberleşme kesildiğinde güvenli konuma dönüş Simulink tarafında sağlanır. Acil durdurma butonu LabVIEW'dan bağımsızdır.
+
+## 5. Stewart Platformu entegrasyonu
 
 Ayrıntılar: [labview-simulink-haberlesme.md](labview-simulink-haberlesme.md)
 
-## 5. Açık noktalar
-
-Donanımla ilgili belirsizlikler [acik-sorular.md](acik-sorular.md) dosyasında takip edilir. En kritik olanları:
-
-- Veri toplama cihazının marka/modeli ve LabVIEW sürücüsü
-- Cihazda ısıtıcı ve fanları sürecek **çıkış** kanalı olup olmadığı
-- Basınç sensörlerinin haberleşme tipi
+Platform testlerinde DAQ, güç kaynakları ve (mümkünse) bilgisayar platform dışında sabit durur. Platform üzerindeki düzenekten çıkan termokupl kabloları, güç kabloları ve soğutucu hortumları hareket aralığını karşılayacak boyda ve sabitlenmiş olmalıdır.
