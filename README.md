@@ -88,6 +88,7 @@ Detaylar: [docs/sistem-mimarisi.md](docs/sistem-mimarisi.md)
 - [Veri formatı](docs/veri-formati.md)
 - [Yol haritası](docs/yol-haritasi.md)
 - [Açık sorular](docs/acik-sorular.md)
+- [Literatür](docs/literatur.md)
 
 ## Ekip
 
