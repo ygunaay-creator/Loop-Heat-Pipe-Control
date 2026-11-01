@@ -2,6 +2,15 @@
 
 Her iki haftada bir yapılan ara durum sunumları için şablon ve logolar.
 
+## İndir
+
+- **[PowerPoint şablonunu indir (.pptx)](https://github.com/ygunaay-creator/Loop-Heat-Pipe-Control/raw/main/docs/sunum/LHP_Ara_Durum_Sablonu.pptx)**
+- Tarayıcıda düzenlenebilir sürümler (Claude):
+  - [LHP Ara Durum Şablonu](https://claude.ai/artifact/8UuHu59DJNFbR7rsGJrShF)
+  - [LHP Ara Durum Sunumu #1](https://claude.ai/artifact/B9Pz1pPNpKwZcNziFixkX2)
+
+> Claude bağlantıları varsayılan olarak yalnızca sahibine açıktır. Ekip arkadaşlarının açabilmesi için sayfanın **Paylaş** menüsünden erişim verilmelidir.
+
 ## Dosyalar
 
 | Dosya | Açıklama |
@@ -41,6 +50,6 @@ Kapak dışındaki slaytların altında proje adı, üç küçük logo ve sayfa 
 
 Yazı tipi: Calibri. Başlıklar 32 pt (kapak 48 pt), gövde 14–16 pt.
 
-Aynı tasarımın tarayıcıda düzenlenebilir sürümü de var: Claude'da oluşturulan "LHP Ara Durum Şablonu" ve "LHP Ara Durum Sunumu #1". Bağlantıları Yiğit'ten isteyin. Bu sürümler PowerPoint veya PDF olarak dışa aktarılabilir.
+Tarayıcıdaki sürümler (yukarıdaki bağlantılar) PowerPoint veya PDF olarak da dışa aktarılabilir.
 
 > Logolar ilgili kurumlara aittir. Yalnızca bu projenin sunumlarında kullanın.
