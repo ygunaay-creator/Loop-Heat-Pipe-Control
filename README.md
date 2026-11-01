@@ -89,6 +89,7 @@ Detaylar: [docs/sistem-mimarisi.md](docs/sistem-mimarisi.md)
 - [Yol haritası](docs/yol-haritasi.md)
 - [Açık sorular](docs/acik-sorular.md)
 - [Literatür](docs/literatur.md)
+- [Sunum şablonu ve logolar](docs/sunum/README.md)
 
 ## Ekip
 
