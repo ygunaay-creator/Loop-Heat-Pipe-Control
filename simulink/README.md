@@ -4,7 +4,7 @@ Stewart Platformu'nun Simulink modeli Türk-Alman Üniversitesi'ne aittir. Bu kl
 
 Planlanan içerik:
 
-- `udp_interface_test.slx` – Platform olmadan LabVIEW ile UDP haberleşmesini test etmek için basit model
+- `udp_interface_test.slx` – Platform olmadan MATLAB ile UDP haberleşmesini test etmek için basit model
 - Platform modeline eklenecek UDP Send/Receive bloklarının açıklaması
 
-Mesaj formatı: [../docs/labview-simulink-haberlesme.md](../docs/labview-simulink-haberlesme.md)
+Mesaj formatı: [../docs/matlab-simulink-haberlesme.md](../docs/matlab-simulink-haberlesme.md)

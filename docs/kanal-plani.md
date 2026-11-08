@@ -1,67 +1,88 @@
 # Sensör ve Kanal Planı
 
-> Taslak – sensör konumları ve sayıları hocayla kesinleştirilecek. Ekipman ayrıntıları: [ekipman.md](ekipman.md)
+> Taslak. Termokupl sayısı ve tipi kesinleşti (**23 × T tipi**). Konumlar öneri niteliğinde. Kanal numaraları yeni veri toplama cihazının modeline göre atanacak.
 
-DAQM901A kartı **slot 100**'e takılıdır:
-- **101–120:** 20 adet termokupl kanalı
-- **121–122:** 2 adet akım kanalı. Basınç transmitterleri (4–20 mA) bu kanallara bağlanır, böylece 20 kanalın tamamı sıcaklığa kalır.
+## Özet
 
-## Giriş kanalları (öneri)
+| Grup | Sayı | Amaç |
+|---|---|---|
+| Evaporatör tarafı | 9 | Isıtıcı, evaporatör gövdesi, kompansasyon odaları, evaporatör giriş/çıkışı |
+| Kondenser tarafı | 9 | Kondenser giriş/çıkışı, kondenser gövdesi, test yüzeyi dağılımı |
+| Dış ölçümler | 5 | Ortam, soğutucu sıvı ve serbest ölçüm noktaları |
+| **Toplam termokupl** | **23** | Hepsi **T tipi** |
+| Basınç | 2 | DMS20S, 4–20 mA |
+| **Toplam giriş** | **25** | |
 
-Termokupl tipi önerisi: **T tipi** (−100…400 °C aralığında DAQ hatası 0,9 °C; 0 °C civarında iyi davranır). Kesinleşmedi.
+**Neden T tipi?** Düşük sıcaklıklarda (0 °C civarı, buz önleme bölgesi) doğruluğu iyi. Literatürdeki üç çalışmanın üçü de T tipi kullanmış ([literatur.md](literatur.md)). T tipinde (ANSI) **mavi tel +, kırmızı tel −**.
 
-| Kanal | Etiket | Büyüklük | Konum |
+## Evaporatör tarafı (9)
+
+| # | Etiket | Konum | Not |
 |---|---|---|---|
-| 101 | T_EV_01 | Sıcaklık | Evaporatör gövdesi – ısıtıcı tarafı |
-| 102 | T_EV_02 | Sıcaklık | Evaporatör gövdesi |
-| 103 | T_EV_03 | Sıcaklık | Evaporatör gövdesi |
-| 104 | T_CC | Sıcaklık | Kompansasyon odası (compensation chamber) |
-| 105 | T_VL_IN | Sıcaklık | Buhar hattı girişi (evaporatör çıkışı) |
-| 106 | T_VL_OUT | Sıcaklık | Buhar hattı çıkışı (kondenser girişi) |
-| 107 | T_LL_IN | Sıcaklık | Sıvı hattı girişi (kondenser çıkışı) |
-| 108 | T_LL_OUT | Sıcaklık | Sıvı hattı çıkışı (evaporatör girişi) |
-| 109 | T_CO_01 | Sıcaklık | Kondenser |
-| 110 | T_CO_02 | Sıcaklık | Kondenser |
-| 111 | T_CO_03 | Sıcaklık | Kondenser |
-| 112 | T_SURF_01 | Sıcaklık | Test yüzeyi (hücum kenarı) |
-| 113 | T_SURF_02 | Sıcaklık | Test yüzeyi |
-| 114 | T_SURF_03 | Sıcaklık | Test yüzeyi |
-| 115 | T_SURF_04 | Sıcaklık | Test yüzeyi |
-| 116 | T_SURF_05 | Sıcaklık | Test yüzeyi |
-| 117 | T_CH_SUP | Sıcaklık | Soğutucu sıvı gidiş hattı |
-| 118 | T_CH_RET | Sıcaklık | Soğutucu sıvı dönüş hattı |
-| 119 | T_HTR | Sıcaklık | Isıtıcı yüzeyi (güvenlik limiti için) |
-| 120 | T_AMB | Sıcaklık | Ortam |
-| 121 | P_EV | Basınç (4–20 mA) | Evaporatör / buhar hattı – mutlak |
-| 122 | P_CO | Basınç (4–20 mA) | Kondenser / sıvı hattı – mutlak |
+| 1 | `T_HTR` | Isıtıcı yüzeyi, **ısıtılan bölgenin ortası** | Güvenlik limiti ve $R_{tot}$ için |
+| 2 | `T_EV_01` | Evaporatör gövdesi | |
+| 3 | `T_EV_02` | Evaporatör gövdesi | |
+| 4 | `T_EV_03` | Evaporatör gövdesi | |
+| 5 | `T_CC1` | Kompansasyon odası 1 | Tek CC'li LHP'de `T_CC` |
+| 6 | `T_CC2` | Kompansasyon odası 2 | LHP tek CC'liyse evaporatör gövdesine kaydırılır |
+| 7 | `T_VL_IN` | Buhar hattı girişi (evaporatör çıkışı) | $R_{LHP}$ |
+| 8 | `T_LL_OUT` | Sıvı hattı çıkışı (CC girişi) | Isı sızıntısı hesabı. CC girişine olabildiğince yakın |
+| 9 | `T_EV_04` | Evaporatör / yedek | Gerekirse ikinci ısıtıcı noktası |
 
-Soğutucu sıvı gidiş/dönüş sıcaklıkları ve debisi bilinirse kondenserden çekilen ısı hesaplanabilir: Q_c = ṁ·c_p·ΔT. Bu değer enerji dengesi kontrolü için kullanılır.
+## Kondenser tarafı (9)
+
+| # | Etiket | Konum | Not |
+|---|---|---|---|
+| 10 | `T_VL_OUT` | Buhar hattı çıkışı (kondenser girişi) | Başlangıç anı tespiti, $R_{LHP}$, $R_{cond}$ |
+| 11 | `T_LL_IN` | Sıvı hattı girişi (kondenser çıkışı) | $R_{LHP}$, $R_{cond}$ |
+| 12 | `T_CO_01` | Kondenser gövdesi | |
+| 13 | `T_CO_02` | Kondenser gövdesi | |
+| 14 | `T_SURF_01` | Test yüzeyi, kondenser **girişi** tarafı | Kondenser akış yönü boyunca sıralı |
+| 15 | `T_SURF_02` | Test yüzeyi | |
+| 16 | `T_SURF_03` | Test yüzeyi, orta | |
+| 17 | `T_SURF_04` | Test yüzeyi | |
+| 18 | `T_SURF_05` | Test yüzeyi, kondenser **çıkışı** tarafı | Buz önlemede kritik olan en soğuk nokta burada beklenir |
+
+## Dış ölçümler (5)
+
+| # | Etiket | Konum | Not |
+|---|---|---|---|
+| 19 | `T_AMB` | Ortam havası | Her deneyde kaydedilmeli |
+| 20 | `T_CH_SUP` | Soğutucu sıvı gidiş hattı | $R_{tot}$, $R_{cond}$, enerji dengesi |
+| 21 | `T_CH_RET` | Soğutucu sıvı dönüş hattı | Enerji dengesi: $Q_c = \dot m c_p (T_{CH\_RET} - T_{CH\_SUP})$ |
+| 22 | `T_EXT_01` | Serbest (ör. yalıtım dış yüzeyi) | Deneye göre belirlenecek |
+| 23 | `T_EXT_02` | Serbest (ör. fan çıkış havası) | Deneye göre belirlenecek |
+
+## Basınç
+
+| Etiket | Konum | Sinyal | Not |
+|---|---|---|---|
+| `P_EV` | Evaporatör / buhar hattı | 4–20 mA | Mutlak basınç |
+| `P_CO` | Kondenser / sıvı hattı | 4–20 mA | Mutlak basınç |
+
+Besleme: EDU36311A CH3, 24 V. Yeni DAQ'ta akım girişi yoksa her sensör için bir şönt direnç gerekir (250 Ω → 1–5 V).
 
 ## Cihazlardan okunan diğer büyüklükler
 
 | Etiket | Kaynak | Açıklama |
 |---|---|---|
-| HTR_V, HTR_I, HTR_P | GPP-3323 CH1 (geri okuma) | Isıtıcı gerilimi, akımı, gücü (Q) |
-| FAN_V, FAN_I | EDU36311A CH2 | Fan gerilimi ve akımı |
-| LOOP_V | EDU36311A CH3 | Basınç sensörü besleme gerilimi (24 V) |
-| CH_T_INT, CH_T_PROC, CH_SET | Huber CC-415 | Banyo sıcaklığı, proses sıcaklığı, hedef sıcaklık |
-| SP_* | Simulink (UDP) | Stewart Platformu konum ve açıları |
-
-## Çıkışlar (kontrol)
-
-| Aktüatör | Cihaz | Kontrol |
-|---|---|---|
-| Isıtıcı | GPP-3323 CH1 (gerekirse CH1+CH2 seri/paralel) | Gerilim ayarı. Sabit güç veya sıcaklık hedefli (PID). |
-| Fanlar | EDU36311A CH2 | Gerilim ayarıyla hız kontrolü |
-| Basınç sensörü beslemesi | EDU36311A CH3 | Sabit 24 V |
-| Test yüzeyi soğutması | Huber CC-415 | Hedef sıcaklık |
-| Stewart Platformu | Simulink (UDP) | Hareket profili |
+| `HTR_V`, `HTR_I`, `HTR_P` | GPP-3323 CH1 | Isıtıcı gerilimi, akımı, gücü (Q) |
+| `FAN_V`, `FAN_I` | EDU36311A CH2 | Fan gerilimi ve akımı |
+| `CH_SET`, `CH_T_INT` | Huber CC-415 | Hedef ve banyo sıcaklığı (komut seti gelince) |
+| `SP_*` | Simulink | Stewart Platformu konum ve açıları |
 
 ## Etiketleme kuralı
 
 `<büyüklük>_<bölge>_<sıra>`
 
 - Büyüklük: `T` sıcaklık, `P` basınç
-- Bölge: `EV` evaporatör, `CC` kompansasyon odası, `VL` buhar hattı, `LL` sıvı hattı, `CO` kondenser, `SURF` test yüzeyi, `CH` soğutucu, `HTR` ısıtıcı, `AMB` ortam
+- Bölge: `HTR` ısıtıcı, `EV` evaporatör, `CC` kompansasyon odası, `VL` buhar hattı, `LL` sıvı hattı, `CO` kondenser, `SURF` test yüzeyi, `AMB` ortam, `CH` soğutucu, `EXT` serbest dış ölçüm
 
-Aynı etiketler LabVIEW kanal isimlerinde, kayıt dosyası sütunlarında ve Origin'de kullanılır.
+Aynı etiketler MATLAB değişkenlerinde, kayıt dosyası sütunlarında ve analizde kullanılır. Termal direnç formülleri bu etiketlere göre yazılmıştır: [veri-formati.md](veri-formati.md).
+
+## Yapılacaklar
+
+- [ ] Yeni DAQ'ın modeline göre kanal numaralarını atamak
+- [ ] LHP tek CC'li mi çift CC'li mi öğrenmek (`T_CC1`/`T_CC2`)
+- [ ] Termokuplları buz noktasında (0 °C) kalibre etmek
+- [ ] Termokuplları etiketlemek (kablonun iki ucuna etiket numarası)

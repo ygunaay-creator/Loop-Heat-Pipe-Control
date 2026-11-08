@@ -1,12 +1,20 @@
 # Sistem Mimarisi
 
-> Taslak – ekipman ayrıntıları: [ekipman.md](ekipman.md), kanallar: [kanal-plani.md](kanal-plani.md)
+> Taslak. Ekipman ayrıntıları: [ekipman.md](ekipman.md), kanallar: [kanal-plani.md](kanal-plani.md), MATLAB komutları: [../matlab/README.md](../matlab/README.md)
+
+## Alınan kararlar (Kasım 2026)
+
+| Konu | Önceki plan | Yeni karar | Gerekçe |
+|---|---|---|---|
+| Kontrol ve kayıt yazılımı | LabVIEW | **MATLAB** | Güç kaynakları MATLAB'dan sorunsuz kontrol edildi. Simulink ile aynı ortamda olması platform entegrasyonunu kolaylaştırıyor. |
+| Veri toplama cihazı | Keysight DAQ973A | **Yeni cihaz** (model teyit edilecek) | Laboratuvar çalışmaları sonucunda değiştirildi |
+| Termokupllar | 20 adet, tip belirsiz | **23 × T tipi** (9 + 9 + 5) | Ölçüm noktaları genişletildi |
 
 ## 1. Fiziksel sistem
 
-- **Evaporatör tarafı:** GPP-3323 ile beslenen elektrikli ısıtıcı evaporatörü ısıtır. Bu ısı, uçaktaki atık ısıyı temsil eder. Çalışma akışkanı burada buharlaşır.
+- **Evaporatör tarafı:** GPP-3323 ile beslenen kartuş ısıtıcı evaporatörü ısıtır. Bu ısı, uçaktaki atık ısıyı temsil eder.
 - **Buhar ve sıvı hatları:** Buhar kondensere, yoğuşan sıvı kılcal kuvvetle evaporatöre geri döner.
-- **Kondenser tarafı:** Kondenser, kanat hücum kenarını temsil eden soğuk test yüzeyine termal olarak bağlıdır. Test yüzeyi Huber CC-415 soğutucusuyla düşük sıcaklığa getirilir. Fanlar soğutma koşullarını değiştirmek için kullanılır.
+- **Kondenser tarafı:** Kondenser, kanat hücum kenarını temsil eden test yüzeyine bağlıdır. Test yüzeyi soğutucuyla (Huber, teyit edilecek) düşük sıcaklığa getirilir. Fanlar soğutma koşullarını değiştirir.
 
 Düzenek İTÜ'de kurulacak, dinamik testler için Türk-Alman Üniversitesi'ndeki Stewart Platformu'na taşınacaktır.
 
@@ -14,79 +22,73 @@ Düzenek İTÜ'de kurulacak, dinamik testler için Türk-Alman Üniversitesi'nde
 
 ```mermaid
 flowchart LR
-    subgraph PC["Dell T3680 – LabVIEW"]
-        LV["LabVIEW uygulaması"]
+    subgraph PC["Dell T3680 – MATLAB"]
+        ML["MATLAB betikleri"]
     end
 
-    DAQ["Keysight DAQ973A<br/>+ DAQM901A"]
-    GPP["GW Instek GPP-3323<br/>ısıtıcı beslemesi"]
+    DAQ["Veri toplama cihazı<br/>(model teyit edilecek)"]
+    GPP["GW Instek GPP-3323<br/>ısıtıcı"]
     EDU["Keysight EDU36311A<br/>fan + 24 V sensör"]
+    N57["Keysight N5765A<br/>yüksek güç (opsiyonel)"]
     CH["Huber CC-415<br/>soğutucu"]
     SL["Simulink"]
     SP["Stewart Platformu"]
 
     subgraph LHP["LHP düzeneği"]
-        TC["20 × termokupl"]
-        PT["2 × basınç transmitteri<br/>4–20 mA"]
+        TC["23 × T tipi termokupl"]
+        PT["2 × basınç<br/>4–20 mA"]
         H["Isıtıcı"]
-        F["Fanlar"]
-        S["Test yüzeyi /<br/>soğuk plaka"]
+        F["Fan(lar)"]
+        S["Test yüzeyi"]
     end
 
     TC --> DAQ
-    PT -->|kanal 121–122| DAQ
-    EDU -->|24 V döngü| PT
-    GPP --> H
-    EDU --> F
+    PT --> DAQ
+    EDU -->|CH3 · 24 V| PT
+    GPP -->|CH1| H
+    EDU -->|CH2| F
     CH -->|soğutucu sıvı| S
 
-    DAQ <-->|USB · SCPI| LV
-    GPP <-->|USB · SCPI| LV
-    EDU <-->|USB · SCPI| LV
-    CH <-->|USB/RS-232| LV
-    SL <-->|Ethernet · UDP| LV
+    DAQ --> ML
+    GPP <-->|USB · serialport| ML
+    EDU <-->|USB · visadev| ML
+    N57 <-.->|USB/LAN · visadev| ML
+    CH <-.->|USB/RS-232| ML
+    SL <-->|UDP| ML
     SL --> SP
 ```
 
-## 3. LabVIEW uygulamasının modülleri
+Düz çizgiler test edilmiş ya da kesinleşmiş bağlantılar, kesikli çizgiler planlanan bağlantılardır.
 
-Her cihaz için ayrı bir sürücü katmanı yazılır. Üst katman cihazlardan bağımsız çalışır.
+## 3. MATLAB uygulamasının bölümleri
 
-| Modül | Görev |
-|---|---|
-| `instruments/daq973a` | Kanal yapılandırma (TC tipi, akım kanalları, Mx+B), tarama başlatma, veri okuma |
-| `instruments/gpp3323` | Gerilim/akım ayarı, çıkış aç/kapa, V/I geri okuma, OVP/OCP |
-| `instruments/edu36311a` | Fan gerilimi, 24 V döngü beslemesi, geri okuma |
-| `instruments/huber` | Hedef sıcaklık, banyo/proses sıcaklığı okuma, başlat/durdur |
-| `platform` | Simulink ile UDP haberleşmesi |
-| `control` | Isıtıcı (sabit güç / PID), fan kontrolü, soğutucu hedefi |
-| `safety` | Limitler, alarmlar, acil kapatma |
-| `logging` | Tüm verilerin tek zaman ekseninde CSV/TDMS kaydı |
-| `ui` | Canlı grafikler, göstergeler, deney ayarları |
+| Bölüm | Görev | Durum |
+|---|---|---|
+| Güç kaynağı bağlantıları | GPP-3323 (`serialport`), EDU36311A (`visadev`) | ✓ Çalışıyor |
+| Isıtıcı kontrolü | Sabit gerilim, sabit güç (V·I geri beslemesi), güç basamakları | ✓ Betik hazır |
+| Fan kontrolü | Gerilimle hız ayarı | ✓ Betik hazır |
+| Sıcaklık okuma | Yeni DAQ'tan 23 termokupl | Bekliyor (DAQ modeli) |
+| Basınç okuma | 2 × 4–20 mA | Bekliyor |
+| Güvenlik | Limitler, otomatik kapatma | Kısmen (süre sınırı, `onCleanup`) |
+| Kayıt | Tüm büyüklükler tek zaman ekseninde CSV | Kısmen (ısıtıcı verisi) |
+| Platform arayüzü | Simulink ile UDP | Bekliyor |
 
-Önerilen yapı **üretici–tüketici (producer–consumer)** döngüleridir: ölçüm, kontrol, platform haberleşmesi ve kayıt ayrı döngülerde çalışır, kuyruklarla veri alışverişi yapar.
-
-**Zamanlama (öneri):**
-- DAQ taraması: 1 s (20 TC + 2 akım ≈ 0,5 s sürer)
-- Güç kaynağı geri okuma: 1 s
-- Soğutucu: 1–2 s
-- Platform haberleşmesi: 50–100 ms (ayrı döngü)
+**Program yapısı (öneri):** Tek bir ana döngü her saniye sırayla DAQ'ı okur, güç kaynaklarını geri okur, kontrol kararını verir, güvenlik kontrolünü yapar ve bir satır kayıt yazar. Platform haberleşmesi daha sık gerekiyorsa MATLAB `timer` nesnesiyle ayrı bir döngüde çalıştırılabilir.
 
 ## 4. Güvenlik
 
 Katmanlı koruma:
 
-1. **Donanım:** GPP-3323 ve EDU36311A'da OVP/OCP sınırları ayarlanır. Huber'in kendi aşırı sıcaklık koruması vardır.
-2. **DAQ:** Kritik kanallara (ör. T_HTR) alarm limiti tanımlanır. Alarm çıkışı PC'den bağımsız çalışır.
-3. **LabVIEW:**
-   - T_HTR veya T_EV limit üstü → ısıtıcı çıkışı kapatılır
+1. **Donanım:** Güç kaynaklarında OVP/OCP ve akım sınırları ayarlanır. OCP, akım sınırından yüksek tutulur.
+2. **MATLAB:**
+   - `T_HTR` veya `T_EV_xx` limit üstü → ısıtıcı kapatılır
+   - Sıcaklık hızla yükseliyorsa ($dT/dt$ limiti) → ısıtıcı kapatılır (kuruma tespiti)
    - Basınç limit üstü → ısıtıcı kapatılır
-   - Kopuk termokupl → uyarı. Kritik kanaldaysa ısıtıcı kapatılır.
    - Bir cihazla haberleşme koparsa → ısıtıcı kapatılır
-4. **Platform:** Haberleşme kesildiğinde güvenli konuma dönüş Simulink tarafında sağlanır. Acil durdurma butonu LabVIEW'dan bağımsızdır.
+   - Betik hata verirse veya Ctrl+C ile durdurulursa → `onCleanup` ile çıkışlar kapatılır
+3. **Operatör:** Isıtıcı açıkken düzeneğin başında biri bulunur. Acil durumda güç kaynağının ön panelinden çıkış kapatılır.
+4. **Platform:** Haberleşme kesildiğinde güvenli konuma dönüş Simulink tarafında sağlanır.
 
 ## 5. Stewart Platformu entegrasyonu
 
-Ayrıntılar: [labview-simulink-haberlesme.md](labview-simulink-haberlesme.md)
-
-Platform testlerinde DAQ, güç kaynakları ve (mümkünse) bilgisayar platform dışında sabit durur. Platform üzerindeki düzenekten çıkan termokupl kabloları, güç kabloları ve soğutucu hortumları hareket aralığını karşılayacak boyda ve sabitlenmiş olmalıdır.
+Ayrıntılar: [matlab-simulink-haberlesme.md](matlab-simulink-haberlesme.md)

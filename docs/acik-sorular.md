@@ -2,40 +2,45 @@
 
 Cevaplandıkça ilgili belgeleri güncelleyin ve soruyu "Cevaplananlar" bölümüne taşıyın.
 
-## Donanım
-- [ ] Termokupl tipi ne olacak (T tipi öneriliyor)? Kaç adet temin edilecek?
-- [ ] Basınç transmitterlerinin aralığı nedir (1 / 2 / 4 bar mutlak)? Hangi bağlantı tipi (J3 kablo, J5 DIN43650…)?
-- [ ] Isıtıcının tipi, direnci ve en yüksek gücü? GPP-3323 (32 V / 3 A kanal başına) yetiyor mu?
-- [ ] Kaç fan olacak, gerilimleri nedir (12 V / 24 V)? EDU36311A CH2 (30 V / 1 A) yetiyor mu?
-- [ ] Huber CC-415'te "Exclusive" E-grade lisansı var mı (harici Pt100 ile proses kontrolü)?
-- [ ] Soğutucuda hangi sıvı kullanılacak? Test yüzeyi / soğuk plaka bağlantısı nasıl olacak?
-- [ ] Soğutucu sıvının debisi ölçülecek mi (enerji dengesi için)?
-- [ ] GPP-3323'te LAN opsiyonu var mı? (Yoksa USB/RS-232 kullanılacak.)
-- [ ] DAQ973A'nın 200/300 yuvalarında başka modül var mı?
+## Veri toplama (öncelikli)
+- [ ] **Yeni veri toplama cihazının tam adı ve modeli nedir?** ("Lab…" ile başlıyor: LabJack mı, ADInstruments PowerLab/LabChart mı?)
+- [ ] Cihazda 23 termokupl için yeterli kanal ve dahili soğuk uç kompanzasyonu var mı? Yoksa ek modül gerekiyor mu?
+- [ ] 4–20 mA akım girişi var mı? Yoksa basınç sensörleri için şönt direnç (250 Ω) kullanılacak.
+- [ ] MATLAB'dan nasıl okunuyor? (Üreticinin MATLAB kütüphanesi, toolbox, dosya aktarımı)
+- [ ] Örnekleme hızı ve doğruluğu?
 
-## Yazılım
-- [ ] LabVIEW sürümü ve lisansı?
-- [ ] Origin sürümü ve lisansı?
-- [ ] Huber CC-415'in uzaktan kontrol komut seti (kılavuz gerekli)
+## Donanım
+- [ ] Basınç transmitterlerinin aralığı nedir (1 / 2 / 4 bar)? Akışkana göre yeterli mi?
+- [ ] Projedeki asıl LHP ısıtıcısı mevcut kartuş ısıtıcı mı (5,33 Ω)? Gereken güç 48 W'ı aşarsa N5765A mı kullanılacak?
+- [ ] Kaç fan olacak?
+- [ ] **Huber CC-415 test yüzeyini soğutmak için mi kullanılacak?** (Bu bir varsayım.) "Exclusive" lisansı var mı? Uzaktan kontrol kılavuzu?
+- [ ] Soğutucu debisi için debimetre temin edilecek mi?
+- [ ] N5765A'nın AC bağlantısını kim yapacak / kontrol edecek?
+
+## LHP
+- [ ] Çalışma akışkanı ne olacak (etanol / amonyak / başka)?
+- [ ] LHP hazır mı alınacak, üretilip doldurulacak mı?
+- [ ] LHP tek CC'li mi, çift CC'li mi? (`T_CC1`/`T_CC2`)
+- [ ] LHP platforma hangi yönde monte edilecek?
 
 ## Stewart Platformu
-- [ ] Simulink modeli hangi ortamda çalışıyor (Desktop Real-Time, Speedgoat vb.)?
-- [ ] Platformun serbestlik derecesi, hareket sınırları, maksimum hız/ivme ve taşıma kapasitesi?
-- [ ] Simulink modeline UDP blokları eklenebilir mi? Kim onaylayacak?
-- [ ] LabVIEW ve Simulink aynı bilgisayarda mı çalışacak?
-- [ ] Platforma kablo ve hortum nasıl taşınacak? Soğutucu ile platform arası mesafe?
+- [ ] Simulink modeli hangi ortamda ve hangi bilgisayarda çalışıyor?
+- [ ] Hareket sınırları, maksimum hız/ivme, taşıma kapasitesi, Euler açı sırası?
+- [ ] Modele UDP blokları eklenebilir mi? Kim onaylayacak?
 
 ## Deney
 - [ ] Buz önleme için hedef test yüzeyi sıcaklığı?
-- [ ] Hangi ısı girdileri ve hareket profilleri test edilecek?
+- [ ] Kararlı hal kriteri ve sonlandırma sıcaklığı?
 - [ ] Sensörlerin düzenek üzerindeki kesin konumları?
 - [ ] Gerçek düzenek ne zaman hazır olacak?
 
 ## Cevaplananlar
-- LHP düzeneği İTÜ'de kurulacak. Dinamik testler Türk-Alman Üniversitesi'ndeki Stewart Platformu'nda yapılacak.
-- Veri toplama cihazı: **Keysight DAQ973A + DAQM901A** (20 kanal + 2 akım kanalı).
-- Isıtıcı beslemesi: **GW Instek GPP-3323**. Fan ve sensör beslemesi: **Keysight EDU36311A**.
-- Soğutucu: **Huber CC-415**. Bilgisayar: **Dell Precision T3680**.
-- Basınç sensörleri: **DMS20S**, mutlak, 4–20 mA, 2 telli.
-- DAQM901A'nın çıkışı yok. Kontrol güç kaynakları ve soğutucu üzerinden yapılacak.
-- Ana yazılım LabVIEW, analiz Origin. Platform Simulink ile çalışıyor.
+- **Yazılım:** Kontrol ve kayıt **MATLAB** ile yapılacak (LabVIEW bırakıldı). Instrument Control Toolbox kuruldu.
+- **Veri toplama cihazı değişti.** Keysight DAQ973A artık ana cihaz değil.
+- **Termokupllar:** 23 × **T tipi** (9 evaporatör + 9 kondenser + 5 dış).
+- **GPP-3323** MATLAB'dan kontrol ediliyor (USB, GW Instek sürücüsü, 115200 baud).
+- **EDU36311A** MATLAB'dan kontrol ediliyor (USB, `visadev`).
+- **Mevcut kartuş ısıtıcının direnci ≈ 5,33 Ω.** GPP CH1 ile en fazla ≈ 48 W.
+- **Fan:** 12 V DC, EDU36311A CH2'den çalışıyor.
+- LHP düzeneği İTÜ'de kurulacak, dinamik testler Türk-Alman Üniversitesi'ndeki Stewart Platformu'nda yapılacak.
+- Basınç sensörleri: DMS20S, mutlak, 4–20 mA, 2 telli.

@@ -21,19 +21,19 @@ Danışman hocanın paylaştığı iş adımları ve bunların **kontrol ve veri
 
 ## 3. Isı kaynağının kurulması ●
 - Elektrikli ısıtıcının evaporatöre termal olarak bağlanması
-- Farklı seviyelerde kontrollü ısı girdisi → **GPP-3323 + LabVIEW ile sabit güç kontrolü, V·I ile güç ölçümü**
+- Farklı seviyelerde kontrollü ısı girdisi → **GPP-3323 + MATLAB ile güç kontrolü, V·I ile güç ölçümü. Mevcut ısıtıcı: ≈ 5,33 Ω, en fazla ≈ 48 W (test edildi)**
 
 ## 4. Kondenser ile test yüzeyinin entegrasyonu ◐
 - Kondenserin soğuk test yüzeyine termal entegrasyonu (termal macun, kelepçe vb.)
 - Soğutma sisteminin kurulması ve test yüzeyini düşük sıcaklığa getirebildiğinin doğrulanması
 - Isı kaybına karşı yalıtım
 
-*Bizim için:* Soğutucunun LabVIEW'dan kontrolü ve test yüzeyi sıcaklıklarının izlenmesi.
+*Bizim için:* Soğutucunun MATLAB'dan kontrolü ve test yüzeyi sıcaklıklarının izlenmesi.
 
 ## 5. Ölçüm ve veri toplama sistemi ●
 - Termokupl yerlerinin planlanması: evaporatör, buhar ve sıvı hatları, kondenser, test yüzeyi → [kanal-plani.md](kanal-plani.md)
 - Termokuplların yerleştirilmesi ve kalibrasyonu
-- Çok kanallı veri toplama sisteminin kurulması ve eş zamanlı kayıt → **DAQ973A + LabVIEW**
+- Çok kanallı veri toplama sisteminin kurulması ve eş zamanlı kayıt → **yeni veri toplama cihazı + MATLAB**, 23 × T tipi termokupl (9 + 9 + 5)
 
 ## 6. Ön testler ve doğrulama ●
 - Sızdırmazlık, sensör okumaları ve soğutma kapasitesi kontrolü
@@ -50,15 +50,15 @@ Danışman hocanın paylaştığı iş adımları ve bunların **kontrol ve veri
 - Ortam ve test yüzeyi sıcaklığı
 - Sistem yerleşimi (eğim, evaporatör–kondenser konumu)
 
-*Bizim için:* Deney senaryolarının LabVIEW'dan otomatik çalıştırılması (ör. güç basamakları).
+*Bizim için:* Deney senaryolarının MATLAB'dan otomatik çalıştırılması (ör. güç basamakları).
 
 ## 9. Stewart Platformu üzerinde dinamik testler ●
 - Düzeneğin platforma taşınabilir hale getirilmesi: kablolama, sabitleme, veri toplama
-- Açısal hareketler: eğim, salınım, uçuş manevrası benzetimi → **LabVIEW ↔ Simulink (UDP)**
+- Açısal hareketler: eğim, salınım, uçuş manevrası benzetimi → **MATLAB ↔ Simulink (UDP)**
 - Hareketlerin termal performansa etkisinin ölçülmesi
 
 ## 10. Veri analizi ve değerlendirme ●
-- Grafikler ve **belirsizlik analizi** → Origin
+- Grafikler ve **belirsizlik analizi** → MATLAB / Origin
 - Test yüzeyinin buz önleme için gereken sıcaklıkta tutulup tutulamadığının değerlendirilmesi
 - LHP'nin buz önleme amacıyla kullanılabilirliği hakkında ön sonuç
 

@@ -1,115 +1,124 @@
 # Ekipman
 
-Bu belge, elimizdeki ekipmanların projeyle ilgili özelliklerini ve sistemdeki rollerini özetler. Değerler üretici belgelerinden alınmıştır. Kesin değerler için orijinal kılavuzlara bakın.
+Bu belge, ekipmanların projeyle ilgili özelliklerini, sistemdeki rollerini ve **MATLAB'dan nasıl kontrol edildiklerini** özetler. Değerler üretici belgelerinden ve laboratuvar testlerinden alınmıştır. Kesin değerler için orijinal kılavuzlara bakın.
 
 ## Özet
 
-| Ekipman | Model | Rolü | PC bağlantısı | LabVIEW ile kontrol |
-|---|---|---|---|---|
-| Veri toplama | Keysight **DAQ973A** + **DAQM901A** | Sıcaklık ve basınç ölçümü | USB / LAN (GPIB) | SCPI (VISA) |
-| Güç kaynağı 1 | GW Instek **GPP-3323** | **Isıtıcı** beslemesi ve güç ölçümü (Q) | USB / RS-232 (LAN, GPIB opsiyonel) | SCPI (VISA) |
-| Güç kaynağı 2 | Keysight **EDU36311A** | **Fanlar** ve basınç sensörlerinin 24 V beslemesi | USB / LAN | SCPI (VISA), IVI |
-| Soğutucu | Huber **CC-415** (Pilot ONE) | Kondenser / test yüzeyi soğutması | Ethernet / USB / RS-232 | Huber komut seti (doğrulanacak) |
-| Basınç sensörü (×2) | **DMS20S** basınç transmitteri | Evaporatör ve kondenser tarafı basıncı | DAQM901A akım kanalları | DAQ üzerinden |
-| Bilgisayar | Dell Precision **T3680** | LabVIEW, Simulink, Origin | – | – |
+| Ekipman | Model | Rolü | PC bağlantısı | MATLAB | Durum |
+|---|---|---|---|---|---|
+| Veri toplama | **Yeni cihaz** (adı "Lab…" ile başlıyor, teyit edilecek) | 23 termokupl + 2 basınç | Belirlenecek | Belirlenecek | Seçildi, entegrasyon bekliyor |
+| Güç kaynağı 1 | GW Instek **GPP-3323** | **Isıtıcı** (CH1) | USB → sanal COM | `serialport` | ✓ Test edildi |
+| Güç kaynağı 2 | Keysight **EDU36311A** | **Fan** (CH2), basınç sensörü beslemesi (CH3) | USB (USBTMC) | `visadev` | ✓ Test edildi |
+| Güç kaynağı 3 | Keysight **N5765A** | Yüksek güç (30 V / 50 A / 1500 W) | USB / LAN / GPIB | `visadev` | Kurulum aşamasında |
+| Soğutucu | Huber **CC-415** (Pilot ONE) | Test yüzeyi soğutması (teyit edilecek) | USB / RS-232 / Ethernet | `serialport` (komut seti bekleniyor) | Test edilmedi |
+| Termokupl | **T tipi** × 23 | 9 evaporatör + 9 kondenser + 5 dış | DAQ üzerinden | – | Karar verildi |
+| Basınç sensörü | **DMS20S** × 2 | Evaporatör ve kondenser tarafı basıncı | DAQ üzerinden (4–20 mA) | – | Bağlantı DAQ'a göre belirlenecek |
+| Bilgisayar | Dell Precision **T3680** | MATLAB, Simulink, Origin | – | – | – |
+| Eski veri toplama | Keysight DAQ973A + DAQM901A | Artık ana cihaz değil | USB / LAN | `visadev` | Yedek / doğrulama için kullanılabilir |
 
-**Önemli sonuç:** DAQM901A yalnızca ölçüm kartıdır, çıkışı yoktur. Isıtıcı ve fanların kontrolü **güç kaynakları üzerinden** yapılır: LabVIEW, güç kaynaklarına SCPI komutlarıyla gerilim ve akım ayarı gönderir. Bu nedenle ek bir çıkış modülüne (DAQM907A/DAQM903A) gerek yoktur.
+**MATLAB gereksinimi:** Keysight cihazları (`visadev`) için **Instrument Control Toolbox** gerekir. Laboratuvar bilgisayarına kuruldu. GPP-3323 (`serialport`) temel MATLAB ile çalışır.
 
 ---
 
-## Keysight DAQ973A + DAQM901A
+## Veri toplama cihazı (yeni)
 
-**Ana kasa (DAQ973A)**
-- Dahili 6½ haneli DMM, 3 modül yuvası (100 / 200 / 300)
-- Arayüzler: USB 2.0, Gigabit LAN, GPIB. Ayrıca web arayüzü ve ön panel.
-- 1 milyon okumalık zaman damgalı kalıcı hafıza, USB belleğe kayıt
-- Kanal başına alarm limitleri, 4 adet TTL alarm çıkışı
-- Kanal başına **Mx+B ölçekleme** (ör. 4–20 mA → bar)
-- Programlama: SCPI-1999, 34970A/34972A uyumlu
-- Birlikte gelen yazılım: **BenchVue DAQ**. LabVIEW programı hazır olmadan sensörleri test etmek için kullanılabilir.
+Laboratuvar çalışmalarından sonra veri toplama cihazının değiştirilmesine karar verildi. Cihazın adı "Lab…" ile başlıyor. **Marka ve model teyit edilmeli** (olasılıklar: LabJack serisi, ADInstruments PowerLab/LabChart). Model netleşince bu bölüm doldurulacak:
 
-**Kart (DAQM901A)**: 20 kanallı armatür multiplexer
-- 20 adet 2 telli kanal (101–120) + **2 adet sigortalı akım kanalı (121–122, en fazla 1 A)**
-- **Dahili termokupl soğuk uç referansı**
-- Kopuk termokupl kontrolü (kanal başına seçilebilir)
-- Tarama hızı: DCV için 80 kanal/s, **termokupl için 50 kanal/s**. 20 termokupl kanalının bir taraması yaklaşık 0,4 s sürer, bu nedenle önerilen örnekleme aralığı **1 s**.
+- Kanal sayısı ve termokupl girişi var mı (soğuk uç kompanzasyonu dahili mi)?
+- 4–20 mA akım girişi var mı? Yoksa basınç sensörleri için şönt direnç gerekir (ör. 250 Ω → 1–5 V).
+- MATLAB'dan nasıl okunur (hazır MATLAB kütüphanesi, toolbox veya dosyadan aktarım)?
+- Örnekleme hızı, doğruluk.
 
-**Termokupl doğruluğu (DAQ + soğuk uç, termokuplun kendi hatası hariç)**
+Gereken kanal sayısı: **23 termokupl + 2 basınç = 25 giriş.** Kanal planı: [kanal-plani.md](kanal-plani.md)
 
-| Tip | Aralık | Hata |
-|---|---|---|
-| K | −100…1200 °C | 0,9 °C |
-| T | −100…400 °C | 0,9 °C |
-| J | −150…1200 °C | 1,0 °C |
-| E | −150…1000 °C | 1,0 °C |
-
-Pt100 RTD de desteklenir (DMM hatası 0,05 °C). Kritik noktalarda daha hassas ölçüm için seçenek olabilir.
+---
 
 ## GW Instek GPP-3323: Isıtıcı beslemesi
 
+**Özellikler**
 - CH1 ve CH2: 0–32 V / 0–3 A (her biri ~96 W). CH3: sabit 1,8 / 2,5 / 3,3 / 5 V, 5 A.
-- **Tracking seri** modunda 64 V / 3 A, **paralel** modda 32 V / 6 A (en fazla ~192 W)
-- Geri okuma doğruluğu: gerilim ±(0,03 % + 10 mV), akım ±(0,3 % + 10 mA)
-- Arayüzler: RS-232 ve USB (standart), LAN ve GPIB (opsiyonel). SCPI komutları.
+- Seri (64 V / 3 A) veya paralel (32 V / 6 A) bağlanabilir.
+- Geri okuma doğruluğu: gerilim ±(%0,03 + 10 mV), akım ±(%0,3 + 10 mA).
+- Komut sonu karakteri: `\n` (LF).
 
-**Projedeki rolü:** Isıtıcıyı besler. LabVIEW gerilimi ayarlar, gerilim ve akımı geri okur. **Uygulanan ısı Q = V · I doğrudan ölçülür.** Bu değer termal direnç hesabı için gereklidir. Sabit güç modu, LabVIEW'da gerilimin sürekli ayarlanmasıyla sağlanır.
+**Bağlantı (test edildi)**
+- **GW Instek USB sürücüsü gerekli** ("GPP Serial"): [GPP-Series indirme sayfası](https://www.gwinstek.com/en-US/products/detail/GPP-Series). Sürücü yoksa Aygıt Yöneticisi'nde sarı ünlemli "USB2.0-Serial" (VID_2184, PID_0057) görünür.
+- Cihazda **System → F1 (Interface) → F2 (USB)** seçilmeli. USB baud rate: **115200**.
+- Windows'ta bir COM portu olarak görünür. Numara bilgisayara ve USB girişine göre değişir (testlerde COM3 ve COM5 görüldü).
+- MATLAB: `serialport("COMx", 115200)`, `configureTerminator(gpp, "LF")`.
 
-> Isıtıcının direnci ve hedef güç aralığı netleşince kaynağın yeterli olup olmadığı kontrol edilmeli. Örneğin 10 Ω'luk bir ısıtıcı 32 V'ta 3,2 A çeker, bu da 3 A sınırının üzerindedir.
+**Projedeki kullanım:** Isıtıcı **CH1**'e bağlı. Gerilim ve akım geri okunarak uygulanan ısı **Q = V · I** doğrudan ölçülür.
+
+**Laboratuvar ölçümü (6 Kasım 2026):** Mevcut kartuş ısıtıcının direnci **≈ 5,33 Ω** (5,00 V'ta 0,939 A). CH1'in 3 A sınırıyla bu ısıtıcıya verilebilecek en yüksek güç **≈ 48 W** (≈ 16 V, 3 A).
+
+| Hedef güç | VSET1 | Akım | ISET1 önerisi |
+|---|---|---|---|
+| 10 W | 7,3 V | 1,37 A | 1,6 A |
+| 20 W | 10,3 V | 1,94 A | 2,3 A |
+| 30 W | 12,6 V | 2,37 A | 2,8 A |
+| ~48 W (en fazla) | 16 V | 3,0 A | 3,0 A |
+
+**Not:** Aşırı akım koruması (OCP) akım sınırından (ISET) **yüksek** ayarlanmalı. İkisi eşit olursa kalkış akımında kanal hemen kapanır (fan testinde görüldü).
+
+---
 
 ## Keysight EDU36311A: Fan ve sensör beslemesi
 
-- CH1: 0–6 V / 5 A. CH2 ve CH3: 0–30 V / 1 A. Toplam 90 W. Kanallar birbirinden yalıtılmıştır.
-- CH2 ve CH3 seri (60 V) veya paralel (2 A) bağlanabilir.
-- Geri okuma doğruluğu (CH2/3): gerilim ±(0,05 % + 10 mV), akım ±(0,2 % + 5 mA)
-- OVP, OCP ve OTP korumaları. Komut işleme süresi 10 ms'nin altında.
-- Arayüzler: USB, LAN (LXI). SCPI, IVI sürücüsü, BenchVue.
+**Özellikler**
+- CH1: 0–6 V / 5 A. CH2 ve CH3: 0–30 V / 1 A. Toplam 90 W.
+- Geri okuma doğruluğu (CH2/3): gerilim ±(%0,05 + 10 mV), akım ±(%0,2 + 5 mA).
+- OVP, OCP ve OTP korumaları.
 
-**Önerilen kullanım:**
-- **CH2:** fan(lar). DC fanların hızı besleme gerilimiyle ayarlanır.
-- **CH3:** basınç transmitterleri için **24 V döngü beslemesi**
-- CH1: yedek (5 V'luk fanlar veya ek ihtiyaçlar için)
+**Bağlantı (test edildi)**
+- USB (USBTMC): ayrı sürücü gerekmez, NI-VISA veya Keysight IO Libraries yeterli. Kablo **arka paneldeki** USB-B girişine takılmalı (ön paneldeki USB girişi bellek içindir).
+- VISA adresi: `USB0::0x2A8D::0x8F01::CN64470294::0::INSTR`
+- MATLAB: `visadev(...)` (Instrument Control Toolbox).
+- Ethernet de mümkün: doğrudan kabloyla cihaz 169.254.x.x adresi alır. `tcpclient(IP, 5025)` ile toolbox'sız bağlanılabilir.
+
+**Projedeki kullanım**
+- **CH2: Fan.** 12 V'luk DC fan, hız gerilimle ayarlanır (yaklaşık 7–12 V).
+- **CH3: Basınç sensörleri için 24 V döngü beslemesi** (planlanan).
+- **CH1:** 5 A'ya kadar akım gereken küçük yükler (ör. peltier testi).
+
+**Not:** Keysight cihazlarında OCP açıkken akım sınırına ulaşılınca kanal kapanır. Fan gibi kalkış akımı olan yüklerde OCP'yi kapalı bırakıp yalnızca akım sınırı kullanın.
+
+---
+
+## Keysight N5765A: Yüksek güç kaynağı
+
+- **0–30 V, 0–50 A, en fazla 1500 W**, tek çıkış. USB, LAN, GPIB, LXI.
+- Giriş: 100–240 V AC, 50–60 Hz, ≈ 1940 VA (230 V'ta ≈ 8,5 A).
+- **AC girişi vidalı klemens (L, N, ⏚):** cihazla fişli kablo gelmiyor. Kablo ve topraklı fiş bağlantısı **yetkili kişiye yaptırılmalı / kontrol ettirilmeli.** Cihaz doğrudan topraklı duvar prizine takılmalı.
+- **DC çıkış arka paneldeki baralardan** alınır (+V, −V). Halkalı kablo pabucu kullanılmalı, kablo kesiti akıma uygun olmalı (10 A'ya kadar ≥ 1,5 mm², 50 A için ≈ 10 mm²).
+- Arka paneldeki **sense konnektörü** (local sense köprüleri) takılı kalmalı. **SW1** DIP anahtarlarına dokunulmamalı.
+- **İlk açılışta yük bağlanmamalı.** Akım sınırı her zaman yüke göre düşük ayarlanmalı.
+
+Ayrıntılı test adımları: [../matlab/README.md](../matlab/README.md)
+
+---
 
 ## Huber CC-415 soğutucu (Pilot ONE)
 
-- Çalışma aralığı: −40…200 °C, −10 °C'de ±0,02 K kararlılık
-- Soğutma gücü: 20 °C'de 1,2 kW, 0 °C'de 1,0 kW, −20 °C'de 0,6 kW, −30 °C'de 0,2 kW
-- Basma pompası: 25 l/min, 0,7 bar. Emme pompası: 18,5 l/min. Banyo hacmi 5 l. Pompa bağlantısı M16×1.
-- Dahili Pt100, **harici Pt100 girişi**
-- Arayüzler: Ethernet, USB, RS-232. Huber "Spy" yazılımı ile uzaktan kontrol ve veri alma.
-- "Exclusive" E-grade lisansı ile **process (harici sensör) kontrolü**, rampa ve programlar. Lisans durumu bilinmiyor.
-- Boyut ve ağırlık: 410×480×764 mm, **60 kg**. Ortam sıcaklığı 5–40 °C olmalı.
-
-**Projedeki rolü:** Soğuk test yüzeyini (kondenser tarafı) düşük sıcaklığa getirmek. LabVIEW'dan hedef sıcaklık ayarlanıp banyo ve proses sıcaklığı okunabilir.
-
-> Stewart Platformu testlerinde soğutucu platforma konamaz. Yerde kalır ve platforma esnek hortumlarla bağlanır. Hortum uzunluğu ve hareket sırasında hortumların gerilmemesi planlanmalıdır.
+- Çalışma aralığı −40…200 °C. Soğutma gücü 0 °C'de ≈ 1,0 kW, −20 °C'de ≈ 0,6 kW.
+- Dahili Pt100, harici Pt100 girişi. "Exclusive" lisansıyla harici sensöre göre (proses) kontrol.
+- Arayüzler: Ethernet, USB, RS-232.
+- 60 kg, platforma konamaz. Platform testlerinde yerde kalır, hortumla bağlanır.
+- **Rolü (test yüzeyi soğutması) bir varsayımdır, teyit edilmeli.** MATLAB'dan kontrol için Huber'in uzaktan kontrol komut seti gerekli.
 
 ## DMS20S basınç transmitteri
 
-- Difüze silikon sensör, SS316L diyafram. Mutlak, gösterge veya sızdırmaz gösterge basıncı ölçebilir.
-- Temin edilen modelin özellikleri: **mutlak basınç**, aralık seçenekleri 1 / 2 / 4 bar, ¼" erkek diş, **4–20 mA çıkış**
-- Doğruluk %0,5 FS. Histerezis ve tekrarlanabilirlik %0,1 FS. Sıcaklık kayması ±%1,5 FS (−20…85 °C).
-- Besleme 12–30 V DC, **2 telli** bağlantı (kırmızı: besleme +, yeşil: akım çıkışı)
-- Ortam sıcaklığı −20…85 °C, akışkan sıcaklığı −30…105 °C. Tepki süresi ≤1 ms. IP65.
+- Mutlak basınç, aralık seçenekleri 1 / 2 / 4 bar, ¼" erkek diş, **4–20 mA**, 2 telli. Doğruluk %0,5 FS.
+- Besleme 12–30 V DC → EDU36311A CH3 (24 V).
+- Ölçekleme: `P [bar] = (I [mA] − 4) / 16 × P_FS`
+- Akışkan amonyak olursa bu sensörlerin aralığı yetersiz kalır ([literatur.md](literatur.md), Bölüm 5.1).
 
-**Bağlantı:**
-```
-EDU36311A CH3 (+24 V) ──► Transmitter kırmızı (+)
-Transmitter yeşil (çıkış) ──► DAQM901A akım kanalı (121 / 122) ──► EDU36311A CH3 (−)
-```
-**Ölçekleme (DAQ'da Mx+B veya LabVIEW'da):**
-`P [bar] = (I [mA] − 4) / 16 × P_FS`  (P_FS: 1, 2 veya 4 bar)
+## Diğer
+
+- **Kartuş ısıtıcı:** ≈ 5,33 Ω (ölçüldü). Kutupsuz.
+- **Fan:** 12 V DC, Molex konnektörlü (sarı +12 V, siyah toprak). Laboratuvar testinde EDU36311A CH2'den 12 V ile çalıştırıldı.
+- **Peltier TEC1-12715:** en fazla ≈ 15 V / 15 A. Kutuplu (kırmızı +). Soğutucu olmadan yalnızca kısa süreli ve düşük güçte çalıştırılmalı.
 
 ## Dell Precision T3680: Kontrol bilgisayarı
 
-- Intel Core i9-14900, 32 GB DDR5, 1 TB NVMe SSD, NVIDIA RTX 2000 Ada, Windows 11 Pro
-- **1 adet RJ-45 (Intel I219-LM)**, 4× USB-C, 4× USB 3.2, 2× USB 2.0, boş PCIe yuvaları
-
-**Bağlantı planı (öneri):** Bilgisayarda tek Ethernet portu olduğu için cihazlar **USB** ile bağlanır. Ethernet portu Simulink/Stewart Platformu ağı için ayrılır. Ağ üzerinden birden fazla cihaz gerekirse bir ağ anahtarı (switch) ya da PCIe ağ kartı eklenir.
-
-| Cihaz | Bağlantı |
-|---|---|
-| DAQ973A | USB |
-| GPP-3323 | USB (sanal COM) |
-| EDU36311A | USB |
-| Huber CC-415 | USB veya RS-232 |
-| Simulink / Stewart Platformu | Ethernet (UDP) |
+- Intel Core i9-14900, 32 GB RAM, Windows 11 Pro.
+- 1 × RJ-45 Ethernet, 10 USB portu. Cihazlar USB ile bağlanır, Ethernet Simulink/Stewart Platformu için ayrılabilir.

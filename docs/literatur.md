@@ -35,7 +35,7 @@ Wang 2023 ve Wang 2024 **aynı LHP'yi** kullanıyor (boyutlar birebir aynı). 20
 | Termokupl | T tipi, ±0,5 °C | T tipi, ±0,46 °C (kalibre) | Aynı |
 | DAQ | Agilent 34972A, 20 s | Keysight 34970A + 2×34901A, 10 s | Aynı |
 
-Bizim düzenekle karşılaştırma: Güç aralığımız (GPP-3323 ile ≤ ~190 W) **Zhao 2017 ile aynı mertebede**. Ölçüm altyapımız ise Wang çalışmalarının bir üst sürümü (DAQ973A, 34970A'nın halefi). Isı kuyusu olarak Wang'lardaki gibi bir sirkülatör (Huber) kullanıyoruz.
+Bizim düzenekle karşılaştırma: Güç aralığımız (GPP-3323 ile ≤ ~190 W) **Zhao 2017 ile aynı mertebede**. Ölçüm altyapımız da benzer: çok kanallı bir veri toplama cihazı ve T tipi termokupllar (23 adet). Isı kuyusu olarak Wang'lardaki gibi bir sirkülatör (Huber) kullanıyoruz.
 
 ---
 
@@ -276,7 +276,7 @@ Wang yöntemi (Bölüm 3.5) yalnızca termokupllarla çalışır. Bizim kanallar
 
 - $T_{CC,in}$ → `T_LL_OUT` (sıvı hattı çıkışı = CC girişi). Termokupl **CC girişine olabildiğince yakın** yerleştirilmeli.
 - $\bar T_{CC}$ → `T_CC` (LHP'miz çift CC'liyse iki CC'nin ortalaması).
-- $h_{lv}$, $c_{p,l}$ → akışkan tablosundan (örn. CoolProp veya NIST). LabVIEW ya da Origin'de sıcaklığa bağlı fonksiyon olarak.
+- $h_{lv}$, $c_{p,l}$ → akışkan tablosundan (örn. CoolProp veya NIST). MATLAB ya da Origin'de sıcaklığa bağlı fonksiyon olarak.
 
 Bu hesap aynı zamanda bir **teşhis aracı** olur. Örneğin platform testinde evaporatör ısındığında sebebin sızıntı mı kondenser mi olduğunu söyler (Bölüm 4.4).
 
@@ -290,8 +290,8 @@ Bu hesap aynı zamanda bir **teşhis aracı** olur. Örneğin platform testinde 
 ### 5.5 Deney prosedürüne öneriler
 
 - **Güç basamakları:** Zhao'nun 10–35–60–100–180 W dizisi bizim aralığa doğrudan uyuyor. Karşılaştırma için aynı noktaları kullanmak mantıklı.
-- **Sonlandırma kriteri:** Wang'lar evaporatör çıkışında 70 °C sınır kullanmış. Bizim sınır akışkana ve malzemeye göre belirlenmeli ve LabVIEW güvenlik döngüsüne girmeli.
-- **Başlangıç süresinin otomatik ölçümü:** Zhao'nun tanımıyla, ısıtıcı açıldığı andan `T_VL_OUT`'un (kondenser girişi) belirgin şekilde yükselmeye başladığı ana kadar geçen süre. LabVIEW'da bir eğim eşiğiyle ($dT/dt$) otomatik işaretlenebilir.
+- **Sonlandırma kriteri:** Wang'lar evaporatör çıkışında 70 °C sınır kullanmış. Bizim sınır akışkana ve malzemeye göre belirlenmeli ve MATLAB güvenlik döngüsüne girmeli.
+- **Başlangıç süresinin otomatik ölçümü:** Zhao'nun tanımıyla, ısıtıcı açıldığı andan `T_VL_OUT`'un (kondenser girişi) belirgin şekilde yükselmeye başladığı ana kadar geçen süre. MATLAB'da bir eğim eşiğiyle ($dT/dt$) otomatik işaretlenebilir.
 - **Aşırı ısınma (overshoot) miktarı:** Başlangıçtaki en yüksek `T_EV` değerinden kararlı hal değerini çıkarmak. Her başlangıç testinde raporlanmalı.
 - **Projeye özgü bir ölçüt önerisi, "buz önleme hazır olma süresi":** Isıtıcı açıldıktan sonra en soğuk `T_SURF` kanalının 0 °C'yi geçmesine kadar geçen süre. Zhao'daki "10 dakika önceden açın" sonucunun bizim düzenekteki karşılığı olur.
 - **Kararlı hal kriteri:** Makalelerde sayısal bir kriter verilmemiş. Bizim önerimiz örneğin "tüm sıcaklıklarda 5 dakikada 0,1 °C'den az değişim". Ekiple netleştirilmeli.
@@ -304,7 +304,7 @@ Bu hesap aynı zamanda bir **teşhis aracı** olur. Örneğin platform testinde 
   - Kondenserdeki akışın yerçekimine göre yönünü değiştiren açı (Wang'daki θ)
 
   Platformun roll/pitch eksenlerinin bu ikisine nasıl karşılık geldiği, **LHP'nin platforma montaj yönüne** bağlı. Montaj yapılmadan önce belgelenmeli.
-- **Döndürme sırası:** Wang'da sıra önemliydi (önce φ, sonra θ). Simulink modelinin hangi Euler açısı sırasını kullandığı (örn. ZYX) öğrenilmeli ve LabVIEW'daki hareket profilleri buna göre tanımlanmalı.
+- **Döndürme sırası:** Wang'da sıra önemliydi (önce φ, sonra θ). Simulink modelinin hangi Euler açısı sırasını kullandığı (örn. ZYX) öğrenilmeli ve MATLAB'daki hareket profilleri buna göre tanımlanmalı.
 - **Önerilen ilk test matrisi:** Etkinin 45°'de büyük ölçüde doyduğu biliniyor. Bu yüzden 0°, ±5°, ±10°, ±20°, ±45° gibi küçük açılara yoğunlaşan bir tarama, platformun hareket sınırlarına da uygun ve bilgi açısından en verimli seçenek olur. Kesin sınırlar platform verisi gelince belirlenmeli.
 - **Montaj önerisi:** Gerçek uçuşta AOA çoğunlukla pozitif. Hem Zhao'ya (evaporatör çıkışı yukarıda) hem Wang'a (kondenser akışı yerçekimi yönünde) göre, düzenek **pozitif pitch'te kondenserdeki akış aşağı doğru olacak** şekilde kurulmalı.
 - **Düşük güçte daha hassas:** Zhao'da yönelimin başlangıç süresine etkisi 10 W'ta 21,5 dakika, 180 W'ta 2,75 dakikaydı. Platform testleri **düşük güç noktalarını mutlaka içermeli**.
@@ -312,7 +312,7 @@ Bu hesap aynı zamanda bir **teşhis aracı** olur. Örneğin platform testinde 
 ### 5.7 Örnekleme, salınımlar ve alarmlar
 
 - Makaleler 10–20 s örnekleme kullanmış. Bizim 1 s'lik örneklememiz başlangıç geçişlerini ve salınımları (±0,5–1,5 °C mertebesinde) rahatça çözer.
-- AOA ≠ 0° iken başlangıçtaki salınımlar ve ~2 °C'lik aşırı ısınmalar **normal davranış**. LabVIEW'daki alarm limitleri bunlarla tetiklenmeyecek, ama gerçek kuruma (dry-out) durumunu yakalayacak şekilde seçilmeli. Örneğin `T_HTR` için mutlak limit artı hızlı yükselme ($dT/dt$) limiti birlikte kullanılabilir.
+- AOA ≠ 0° iken başlangıçtaki salınımlar ve ~2 °C'lik aşırı ısınmalar **normal davranış**. MATLAB'daki alarm limitleri bunlarla tetiklenmeyecek, ama gerçek kuruma (dry-out) durumunu yakalayacak şekilde seçilmeli. Örneğin `T_HTR` için mutlak limit artı hızlı yükselme ($dT/dt$) limiti birlikte kullanılabilir.
 
 ### 5.8 Kalibrasyon ve yalıtım
 
