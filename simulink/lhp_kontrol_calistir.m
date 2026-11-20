@@ -17,6 +17,12 @@ sonuc = sim(mdl);
 k  = sonuc.get('kayit');
 t  = k.time;
 v  = k.signals.values;
+% MATLAB sürümüne göre veri N×5 ya da 5×1×N gelebilir; her durumda N×5'e çevir
+v  = squeeze(v);
+if size(v, 1) ~= numel(t), v = v.'; end
+if size(v, 2) ~= 5
+    error('Beklenen 5 sinyal, gelen veri boyutu: %s', mat2str(size(k.signals.values)));
+end
 sonuc_tablo = table(t, v(:,1), v(:,2), v(:,3), v(:,4), v(:,5), 'VariableNames', ...
     {'time_s', 'T_hedef', 'T_olculen', 'P_W', 'T_gercek', 'alarm'});
 
