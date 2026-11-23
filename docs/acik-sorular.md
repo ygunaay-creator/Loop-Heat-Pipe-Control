@@ -29,12 +29,17 @@ Cevaplandıkça ilgili belgeleri güncelleyin ve soruyu "Cevaplananlar" bölüm�
 - [ ] Modele UDP blokları eklenebilir mi? Kim onaylayacak?
 
 ## Deney
-- [ ] Buz önleme için hedef test yüzeyi sıcaklığı?
+- [ ] Laboratuvardaki test yüzeyinin alanı? (48 W ısıtıcı için ≈ 50 cm² öneriliyor, [tusas-buzlanma-kosullari.md](tusas-buzlanma-kosullari.md))
+- [ ] TUSAŞ'ın 0,67 W/cm² değeri hangi yüzey sıcaklığı için hesaplandı? Hücum kenarına mı, tüm izdüşüm alanına mı?
+- [ ] Huber CC-415 test yüzeyini −10 °C'ye indirebiliyor mu?
+- [ ] Buzlanma yükü (0,67 W/cm²) laboratuvarda nasıl uygulanacak: chiller, fan, ikisi birden?
+- [ ] Evaporatör/ısıtıcı bloğunun kütlesi? (Bulut başındaki yüzey soğumasını bu belirliyor.)
 - [ ] Kararlı hal kriteri ve sonlandırma sıcaklığı?
 - [ ] Sensörlerin düzenek üzerindeki kesin konumları?
 - [ ] Gerçek düzenek ne zaman hazır olacak?
 
 ## Cevaplananlar
+- **Buzlanma koşulları (TUSAŞ):** −10 °C ortam, 40 m/s, LWC 0,5 g/m³, MVD 20 µm, 13,4 dk bulut, 0,67 W/cm² ısı gereksinimi. Hedef yüzey sıcaklığı **+5 °C** alındı (0 °C + pay). [tusas-buzlanma-kosullari.md](tusas-buzlanma-kosullari.md)
 - **Yazılım:** Kontrol ve kayıt **MATLAB** ile yapılacak (LabVIEW bırakıldı). Instrument Control Toolbox kuruldu.
 - **Veri toplama cihazı değişti.** Keysight DAQ973A artık ana cihaz değil.
 - **Termokupllar:** 23 × **T tipi** (9 evaporatör + 9 kondenser + 5 dış).

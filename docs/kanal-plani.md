@@ -41,7 +41,7 @@
 | 15 | `T_SURF_02` | Test yüzeyi | |
 | 16 | `T_SURF_03` | Test yüzeyi, orta | |
 | 17 | `T_SURF_04` | Test yüzeyi | |
-| 18 | `T_SURF_05` | Test yüzeyi, kondenser **çıkışı** tarafı | Buz önlemede kritik olan en soğuk nokta burada beklenir |
+| 18 | `T_SURF_05` | Test yüzeyi, kondenser **çıkışı** tarafı | Buz önlemede kritik olan en soğuk nokta burada beklenir. **Kontrol değişkeni:** `min(T_SURF_01…05)` |
 
 ## Dış ölçümler (5)
 

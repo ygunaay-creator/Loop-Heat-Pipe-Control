@@ -33,7 +33,10 @@ Hocanın iş adımlarıyla ilişkisi: [gorevler.md](gorevler.md)
 ## Aşama 4 – Kontrol ve güvenlik
 - [x] Isıtıcı sabit gerilim ve güç basamakları (betik)
 - [ ] Sabit güç modu (V·I geri beslemesi, sıcaklıkla direnç değişimini telafi eder)
-- [ ] Sıcaklık hedefli PID
+- [x] Sıcaklık hedefli PI: MATLAB betiği ve Simulink modeli (sanal düzenekte)
+- [x] TUSAŞ koşullarına göre senaryo: −10 °C, 13,4 dk bulut, yüzey hedefi +5 °C ([tusas-buzlanma-kosullari.md](tusas-buzlanma-kosullari.md))
+- [ ] Simulink modelinde sanal düzenek yerine gerçek ısıtıcı (GPP-3323) ve sensör okuma
+- [ ] Gerçek düzenekte `C_ev`, `C_yuzey`, `R_lhp` ölçüp modeli güncellemek
 - [ ] Fan kontrolü (kondenser sıcaklığına göre)
 - [ ] Sıcaklık ve $dT/dt$ limitleri, otomatik ısıtıcı kapatma
 - [ ] Otomatik deney senaryoları (ör. 10–35–60–100 W basamakları)

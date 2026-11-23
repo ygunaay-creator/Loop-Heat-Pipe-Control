@@ -1,21 +1,27 @@
 function kayit = sicaklik_kontrol(cfg)
-%SICAKLIK_KONTROL  Isıtıcıyı açıp kapatarak/ayarlayarak sıcaklığı hedefte tutar.
+%SICAKLIK_KONTROL  Isıtıcı gücünü ayarlayarak TEST YÜZEYİNİ hedef sıcaklıkta tutar.
 %
-%   sicaklik_kontrol()                     varsayılan: simülasyon, PI, 80 °C
+%   sicaklik_kontrol()                     varsayılan: TUSAŞ senaryosu, PI, yüzey +5 °C
 %   cfg = sicaklik_kontrol_ayar();         ayarları al, değiştir, çalıştır:
 %   cfg.kontrol = "ACKAPA";  sicaklik_kontrol(cfg)
 %
-%   ŞU AN: Sensör yok. Sıcaklık, ısıtıcıya tepki veren basit bir SANAL DÜZENEK
-%   (ısıl model) ile üretilir ve üzerine rastgele sensör gürültüsü eklenir.
-%   İLERİDE: cfg.kaynak = "labchart" ve cfg.cikis = "gpp" yapılarak aynı kontrol
-%   algoritması gerçek düzenekte çalışır (sicaklik_oku ve guc_uygula fonksiyonları).
+%   SENARYO (TUSAŞ, docs/tusas-buzlanma-kosullari.md):
+%     Soğuk taraf −10 °C. 10. dakikada 13,4 dk sürecek bir "bulut" başlar; bu sürede
+%     yüzeyden 0,67 W/cm² ısı çekilir. Yüzey 0 °C'nin altına düşmemelidir.
+%
+%   ŞU AN: Sensör yok. Sıcaklıklar iki düğümlü bir SANAL DÜZENEK ile üretilir:
+%     ısıtıcı -> evaporatör -> LHP -> test yüzeyi -> soğuk taraf
+%   İLERİDE: cfg.kaynak = "labchart" ve cfg.cikis = "gpp" ile aynı algoritma gerçek
+%   düzenekte çalışır (sicaklik_oku ve guc_uygula fonksiyonları).
 %
 %   Kontrol yöntemleri:
 %     "PI"     : Isıtıcı gücünü 0–Pmax arasında sürekli ayarlar (önerilen)
 %     "ACKAPA" : Termostat gibi, ya tam güç ya kapalı (histerezisli)
 %
-%   Güvenlik: Sıcaklık cfg.T_limit'i aşarsa veya sensör okunamazsa ısıtıcı kapatılır
-%   ve döngü durur. Ctrl+C ile durdurulursa da ısıtıcı kapatılır.
+%   Güvenlik:
+%     - Evaporatör cfg.T_limit'i aşarsa veya sensör okunamazsa ısıtıcı kapanır, döngü durur.
+%     - Ctrl+C ile durdurulursa da ısıtıcı kapanır.
+%     - Bulut sırasında yüzey cfg.T_buz'un altına düşerse BUZ UYARISI kaydedilir (ısıtıcı kapanmaz).
 
     if nargin < 1, cfg = sicaklik_kontrol_ayar(); end
 
@@ -29,56 +35,63 @@ function kayit = sicaklik_kontrol(cfg)
     end
     temizlik = onCleanup(@() guc_kes(gpp, cfg)); %#ok<NASGU>
 
-    % ---------- Sanal düzenek başlangıcı ----------
+    % ---------- Sanal düzenek ve kontrolcü başlangıcı ----------
     sim = sanal_duzenek_baslat(cfg);
-
-    % ---------- Kontrolcü durumu ----------
     ks.integral = 0;
     ks.isitici_acik = false;
 
     % ---------- Kayıt ve grafik ----------
     N = ceil(cfg.sure_s / cfg.dt);
-    kayit = table('Size', [N 5], 'VariableTypes', repmat("double", 1, 5), ...
-                  'VariableNames', ["time_s", "T_hedef", "T_olculen", "P_W", "T_gercek"]);
-    [cizgiT, cizgiP] = grafik_hazirla(cfg);
+    adlar = ["time_s", "T_hedef", "T_yuzey_olc", "T_ev_olc", "P_W", "T_yuzey", "T_ev", "bulut", "buz_uyari"];
+    kayit = table('Size', [N numel(adlar)], 'VariableTypes', repmat("double", 1, numel(adlar)), ...
+                  'VariableNames', adlar);
+    g = grafik_hazirla(cfg);
 
-    fprintf("Başladı: %s kontrol, hedef %.1f °C, kaynak=%s, çıkış=%s\n", ...
-            cfg.kontrol, cfg.T_hedef, cfg.kaynak, cfg.cikis);
+    fprintf("Başladı: %s kontrol, yüzey hedefi %.1f °C, soğuk taraf %.0f °C, bulut %.1f–%.1f dk\n", ...
+            cfg.kontrol, cfg.T_hedef, cfg.tusas.T_soguk, cfg.tusas.t_bulut_bas / 60, ...
+            (cfg.tusas.t_bulut_bas + cfg.tusas.t_bulut_sure) / 60);
 
-    n = 0;                                 % doldurulan kayıt satırı sayısı
+    n = 0;
+    uyari_basladi = false;
     for k = 1:N
         t = (k - 1) * cfg.dt;
+        bulut = bulut_var_mi(cfg, t);
 
-        % 1) Sıcaklığı oku
-        T_olc = sicaklik_oku(cfg, sim);
+        % 1) Sıcaklıkları oku: yüzey (kontrol edilen) ve evaporatör (güvenlik)
+        [T_yuzey, T_ev] = sicaklik_oku(cfg, sim);
 
-        % 2) Güvenlik kontrolü
-        if isnan(T_olc)
+        % 2) Güvenlik
+        if isnan(T_yuzey) || isnan(T_ev)
             warning("Sensör okunamadı (t = %.0f s). Isıtıcı kapatıldı.", t);
             break
         end
-        if T_olc > cfg.T_limit
-            warning("Sıcaklık %.1f °C > %.1f °C güvenlik sınırı! Isıtıcı kapatıldı.", T_olc, cfg.T_limit);
+        if T_ev > cfg.T_limit
+            warning("Evaporatör %.1f °C > %.1f °C güvenlik sınırı! Isıtıcı kapatıldı.", T_ev, cfg.T_limit);
             break
         end
+        buz_uyari = bulut && T_yuzey < cfg.T_buz;
+        if buz_uyari && ~uyari_basladi
+            fprintf("!! BUZ UYARISI (%.1f dk): yüzey %.2f °C\n", t / 60, T_yuzey);
+        end
+        uyari_basladi = buz_uyari;
 
-        % 3) Kontrol kararı: kaç watt verilecek?
-        [P, ks] = kontrolcu(cfg, ks, T_olc);
-
-        % 4) Gücü uygula
+        % 3) Kontrol kararı ve 4) gücü uygula
+        [P, ks] = kontrolcu(cfg, ks, T_yuzey);
         guc_uygula(cfg, gpp, P);
 
         % 5) Sanal düzeneği bir adım ilerlet (yalnızca simülasyonda)
-        sim = sanal_duzenek_adim(cfg, sim, P, t);
+        sim = sanal_duzenek_adim(cfg, sim, P, bulut);
 
         % 6) Kaydet ve çiz
         n = k;
-        kayit(n, :) = {t, cfg.T_hedef, T_olc, P, sim.T};
-        addpoints(cizgiT, t / 60, T_olc);
-        addpoints(cizgiP, t / 60, P);
+        kayit(n, :) = {t, cfg.T_hedef, T_yuzey, T_ev, P, sim.T_yuzey, sim.T_ev, bulut, buz_uyari};
+        addpoints(g.yuzey, t / 60, T_yuzey);
+        addpoints(g.ev, t / 60, T_ev);
+        addpoints(g.guc, t / 60, P);
         if mod(k, 10) == 0, drawnow limitrate; end
         if mod(k, 60) == 0
-            fprintf("%6.1f dk | T = %6.2f °C | P = %5.1f W\n", t / 60, T_olc, P);
+            fprintf("%5.1f dk | yüzey %6.2f °C | evap. %6.2f °C | P %5.1f W%s\n", ...
+                    t / 60, T_yuzey, T_ev, P, string(ifelse(bulut, "  [BULUT]", "")));
         end
 
         pause(cfg.dt / cfg.hiz);
@@ -90,6 +103,11 @@ function kayit = sicaklik_kontrol(cfg)
     dosya = "sicaklik_kontrol_" + string(datetime("now", "Format", "yyyyMMdd_HHmmss")) + ".csv";
     writetable(kayit, dosya);
     fprintf("Kayıt: %s\n", fullfile(pwd, dosya));
+end
+
+%% ======================= SENARYO =======================
+function b = bulut_var_mi(cfg, t)
+    b = t >= cfg.tusas.t_bulut_bas && t < cfg.tusas.t_bulut_bas + cfg.tusas.t_bulut_sure;
 end
 
 %% ======================= KONTROLCÜ =======================
@@ -121,15 +139,17 @@ function [P, ks] = kontrolcu(cfg, ks, T_olc)
 end
 
 %% ======================= SENSÖR =======================
-function T = sicaklik_oku(cfg, sim)
+function [T_yuzey, T_ev] = sicaklik_oku(cfg, sim)
     switch cfg.kaynak
         case "sim"
-            % Sanal sensör: gerçek sıcaklık + rastgele gürültü
-            T = sim.T_sensor + cfg.sim.gurultu * randn;
+            % Sanal sensörler: gecikmeli sıcaklık + rastgele gürültü
+            T_yuzey = sim.Ts_yuzey + cfg.sim.gurultu * randn;
+            T_ev    = sim.Ts_ev    + cfg.sim.gurultu * randn;
 
         case "labchart"
-            % TODO: LabChart'tan ilgili kanalın son değerini okuyun.
-            % Cihaz/yazılım netleşince bu satırı doldurun. Şimdilik hata verir.
+            % TODO: Cihaz netleşince doldurun.
+            %   T_yuzey = min(T_SURF_01 … T_SURF_05)   (en soğuk yüzey noktası)
+            %   T_ev    = T_HTR veya T_EV_01           (ısıtıcı / evaporatör)
             error("LabChart okuma henüz yazılmadı. cfg.kaynak = ""sim"" kullanın.");
 
         otherwise
@@ -163,51 +183,82 @@ function guc_kes(gpp, cfg)
 end
 
 %% ======================= SANAL DÜZENEK =======================
-% Isıl model:  C * dT/dt = P - (T - T_ortam) / R_th
-%   C    : ısıl kapasite (J/°C)  – ısıtılan blok ne kadar "ağır"
-%   R_th : ısıl direnç (°C/W)   – blok çevreye ne kadar kolay ısı veriyor (fan, soğutucu)
-% Sensör de birinci dereceden gecikmeyle (tau_sensor) gerçek sıcaklığı izler.
+% İki düğümlü ısıl model:
+%   C_ev    · dT_ev/dt    = P − Q_lhp − (T_ev − T_lab)/R_ev_kayip
+%   C_yuzey · dT_yuzey/dt = Q_lhp − h_kuru·A·(T_yuzey − T_soguk) − bulut·P_su
+%   Q_lhp = max(T_ev − T_yuzey, 0) / R_lhp        (LHP ısıyı yalnızca evaporatörden yüzeye taşır)
+%   P_su  : bulut sırasında su damlalarının getirdiği ek yük. Yüzey hedefteyken
+%           toplam yük = q_buz·A olacak şekilde hesaplanır (TUSAŞ 0,67 W/cm²).
+% Sensörler birinci dereceden gecikmeyle (tau_sensor) gerçek sıcaklığı izler.
 function sim = sanal_duzenek_baslat(cfg)
-    sim.T = cfg.sim.T_ortam;
-    sim.T_sensor = cfg.sim.T_ortam;
-    sim.R_th = cfg.sim.R_th;
+    sim.T_ev     = cfg.sim.T_lab;          % evaporatör odada
+    sim.T_yuzey  = cfg.tusas.T_soguk;      % yüzey soğuk başlar
+    sim.Ts_ev    = sim.T_ev;
+    sim.Ts_yuzey = sim.T_yuzey;
 end
 
-function sim = sanal_duzenek_adim(cfg, sim, P, t)
+function sim = sanal_duzenek_adim(cfg, sim, P, bulut)
     if cfg.kaynak ~= "sim", return, end
-    % Bozucu etki: belirli bir anda fan hızlanıyor (soğutma artıyor)
-    if t >= cfg.sim.bozucu_zaman_s
-        sim.R_th = cfg.sim.R_th_bozucu;
+    s = cfg.sim;  A = s.A_yuzey * 1e-4;                                  % m²
+    P_su = (cfg.tusas.q_buz * 1e4 - s.h_kuru * (cfg.T_hedef - cfg.tusas.T_soguk)) * A;
+
+    alt = 10;  h = cfg.dt / alt;                                         % kararlılık için alt adımlar
+    for i = 1:alt
+        Q_lhp = max(sim.T_ev - sim.T_yuzey, 0) / s.R_lhp;
+        dTev = (P - Q_lhp - (sim.T_ev - s.T_lab) / s.R_ev_kayip) / s.C_ev;
+        dTyz = (Q_lhp - s.h_kuru * A * (sim.T_yuzey - cfg.tusas.T_soguk) - bulut * P_su) / s.C_yuzey;
+        sim.T_ev    = sim.T_ev + dTev * h;
+        sim.T_yuzey = sim.T_yuzey + dTyz * h;
+        sim.Ts_ev    = sim.Ts_ev    + (sim.T_ev    - sim.Ts_ev)    * h / s.tau_sensor;
+        sim.Ts_yuzey = sim.Ts_yuzey + (sim.T_yuzey - sim.Ts_yuzey) * h / s.tau_sensor;
     end
-    dT = (P - (sim.T - cfg.sim.T_ortam) / sim.R_th) / cfg.sim.C;
-    sim.T = sim.T + dT * cfg.dt;
-    sim.T_sensor = sim.T_sensor + (sim.T - sim.T_sensor) * cfg.dt / cfg.sim.tau_sensor;
 end
 
 %% ======================= GRAFİK VE ÖZET =======================
-function [cizgiT, cizgiP] = grafik_hazirla(cfg)
-    figure("Name", "Sıcaklık kontrolü", "Color", "w");
-    subplot(2, 1, 1); hold on; grid on;
+function g = grafik_hazirla(cfg)
+    figure("Name", "Sıcaklık kontrolü – TUSAŞ senaryosu", "Color", "w");
+    t1 = cfg.tusas.t_bulut_bas / 60;  t2 = t1 + cfg.tusas.t_bulut_sure / 60;  tson = cfg.sure_s / 60;
+
+    subplot(3, 1, 1); hold on; grid on;
+    bulut_golge(t1, t2, [-15 20]);
     yline(cfg.T_hedef, "--", "Hedef", "Color", [0.85 0.33 0.10]);
+    yline(cfg.T_buz, "-", "0 °C", "Color", [0 0.6 0.9]);
+    g.yuzey = animatedline("Color", [0 0.45 0.74], "LineWidth", 1.2);
+    ylabel("Yüzey (°C)"); title("Test yüzeyi (" + cfg.kontrol + ")"); xlim([0 tson]); ylim([-15 20]);
+
+    subplot(3, 1, 2); hold on; grid on;
+    bulut_golge(t1, t2, [0 cfg.T_limit + 10]);
     yline(cfg.T_limit, ":", "Güvenlik sınırı", "Color", [0.6 0 0]);
-    cizgiT = animatedline("Color", [0 0.45 0.74], "LineWidth", 1.2);
-    ylabel("Sıcaklık (°C)"); title("Ölçülen sıcaklık (" + cfg.kontrol + ")");
-    xlim([0 cfg.sure_s / 60]);
-    subplot(2, 1, 2); hold on; grid on;
-    cizgiP = animatedline("Color", [0.85 0.33 0.10], "LineWidth", 1.2);
-    ylabel("Isıtıcı gücü (W)"); xlabel("Zaman (dk)");
-    xlim([0 cfg.sure_s / 60]); ylim([0 cfg.P_max * 1.1]);
+    g.ev = animatedline("Color", [0.47 0.67 0.19], "LineWidth", 1.2);
+    ylabel("Evaporatör (°C)"); xlim([0 tson]); ylim([0 cfg.T_limit + 10]);
+
+    subplot(3, 1, 3); hold on; grid on;
+    bulut_golge(t1, t2, [0 cfg.P_max * 1.1]);
+    g.guc = animatedline("Color", [0.85 0.33 0.10], "LineWidth", 1.2);
+    ylabel("Isıtıcı gücü (W)"); xlabel("Zaman (dk)"); xlim([0 tson]); ylim([0 cfg.P_max * 1.1]);
+end
+
+function bulut_golge(t1, t2, y)
+    patch([t1 t2 t2 t1], [y(1) y(1) y(2) y(2)], [0.85 0.9 1], ...
+          "EdgeColor", "none", "FaceAlpha", 0.6, "HandleVisibility", "off");
+    text(t1 + 0.2, y(2), "bulut", "VerticalAlignment", "top", "Color", [0.3 0.4 0.6]);
 end
 
 function ozet_yazdir(cfg, kayit)
-    T = kayit.T_olculen;  t = kayit.time_s;
-    i = find(T >= cfg.T_hedef - 1, 1);
+    T = kayit.T_yuzey_olc;  t = kayit.time_s;  b = kayit.bulut == 1;
     fprintf("\n----- Özet -----\n");
-    if ~isempty(i)
-        fprintf("Hedefin 1 °C yakınına ulaşma süresi : %.1f dk\n", t(i) / 60);
+    i = find(T >= cfg.T_hedef - 1, 1);
+    if ~isempty(i), fprintf("Yüzeyin hedefe (1 °C yakınına) ulaşma süresi : %.1f dk\n", t(i) / 60); end
+    if any(b)
+        fprintf("Bulut sırasında en düşük yüzey sıcaklığı     : %.2f °C\n", min(T(b)));
+        fprintf("Bulut sırasında 0 °C altında kalma süresi     : %.0f s\n", sum(kayit.buz_uyari) * cfg.dt);
+        fprintf("Bulut sırasında ortalama / en yüksek güç      : %.1f W / %.1f W\n", mean(kayit.P_W(b)), max(kayit.P_W(b)));
     end
-    fprintf("En yüksek sıcaklık                 : %.2f °C\n", max(T));
+    fprintf("En yüksek evaporatör sıcaklığı               : %.1f °C\n", max(kayit.T_ev_olc));
     son = t >= t(end) - 300;
-    fprintf("Son 5 dakika ortalama / sapma      : %.2f °C / ±%.2f °C\n", mean(T(son)), std(T(son)));
-    fprintf("Son 5 dakika ortalama güç          : %.1f W\n", mean(kayit.P_W(son)));
+    fprintf("Son 5 dakika yüzey ortalama / sapma          : %.2f °C / ±%.2f °C\n", mean(T(son)), std(T(son)));
+end
+
+function c = ifelse(kosul, a, b)
+    if kosul, c = a; else, c = b; end
 end

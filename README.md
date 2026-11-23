@@ -3,6 +3,8 @@
 Bu repo, **Loop Heat Pipe (LHP) teknolojisine dayalı buz önleme uygulamaları için test altyapısı** projesinin **kontrol ve veri toplama** kısmını içerir.
 
 > **Durum (Kasım 2026):** Kontrol ve veri toplama yazılımı olarak **MATLAB** kullanılmasına karar verildi (LabVIEW bırakıldı). Veri toplama cihazı değişti, yeni cihazın modeli kesinleşecek. İki güç kaynağı (GPP-3323 ve EDU36311A) MATLAB'dan kontrol edilebiliyor. Sıradaki adım, termokuplların yeni cihazdan MATLAB'a okunması.
+>
+> **TUSAŞ buzlanma koşulları geldi:** −10 °C ortam, 0,67 W/cm² ısı gereksinimi, 13,4 dk bulut maruziyeti. Kontrol hedefi artık **test yüzeyini +5 °C'de tutmak**. Ayrıntılar: [docs/tusas-buzlanma-kosullari.md](docs/tusas-buzlanma-kosullari.md)
 
 ## Proje Hakkında
 
@@ -92,7 +94,7 @@ Tüm komutlar, hazır betikler ve sorun giderme: **[matlab/README.md](matlab/REA
 ├── matlab/               MATLAB betikleri ve komut penceresi kılavuzu
 ├── docs/                 Proje belgeleri (mimari, kanal planı, haberleşme, yol haritası)
 │   └── sunum/            Ara durum sunumu şablonu ve logolar
-├── simulink/             Simulink tarafındaki haberleşme blokları ve notlar
+├── simulink/             Simulink kontrol modeli (betikle kurulur) ve platform haberleşme notları
 ├── analysis/
 │   └── origin/           Origin proje dosyaları ve şablonları
 └── data/                 Örnek ve test verileri (ham veriler repoya konmaz)
@@ -101,6 +103,8 @@ Tüm komutlar, hazır betikler ve sorun giderme: **[matlab/README.md](matlab/REA
 ## Belgeler
 
 - [MATLAB komut kılavuzu ve betikler](matlab/README.md)
+- [TUSAŞ buzlanma koşulları ve test senaryosu](docs/tusas-buzlanma-kosullari.md)
+- [Simulink kontrol modeli](simulink/README.md)
 - [Proje görevleri (iş adımları)](docs/gorevler.md)
 - [Ekipman](docs/ekipman.md)
 - [Sistem mimarisi](docs/sistem-mimarisi.md)
